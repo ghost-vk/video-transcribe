@@ -54,6 +54,28 @@ Output format: MP3, 16 kHz, mono (optimized for OpenAI API).
 - `gpt-4o-transcribe` — supports prompt parameter for context
 - `gpt-4o-transcribe-diarize` — speaker diarization (no prompt support)
 
+### Process video to text (one step)
+
+```bash
+# Basic - video directly to text
+.venv/bin/video-transcribe process meeting.mp4
+
+# With speaker diarization
+.venv/bin/video-transcribe process meeting.mp4 -m gpt-4o-transcribe-diarize -f diarized_json
+
+# With context prompt
+.venv/bin/video-transcribe process tutorial.mp4 -p "Technical terms: API, microservices"
+
+# Specify language
+.venv/bin/video-transcribe process meeting.mp4 -l ru
+
+# Keep audio for debugging
+.venv/bin/video-transcribe process meeting.mp4 --keep-audio
+
+# Custom output path
+.venv/bin/video-transcribe process meeting.mp4 -o transcripts/meeting.txt
+```
+
 ## Configuration
 
 Copy `.env.example` to `.env` and add your API keys:

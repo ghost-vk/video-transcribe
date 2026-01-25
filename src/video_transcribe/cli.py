@@ -6,6 +6,7 @@ from pathlib import Path
 
 from video_transcribe.audio import video_to_audio
 from video_transcribe.transcribe import OpenAIAdapter
+from video_transcribe.pipeline import process_video
 
 
 @click.group()
@@ -125,6 +126,108 @@ def transcribe(
             click.echo(f"Model: {result.model_used}", err=True)
             click.echo(f"Duration: {result.duration:.2f}s" if result.duration else "Duration: N/A", err=True)
 
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        raise click.Abort()
+
+
+@cli.command()
+@click.argument("video_path", type=click.Path(exists=True))
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(),
+    help="Output text file path. Default: same as video with .txt extension.",
+)
+@click.option(
+    "--model",
+    "-m",
+    type=click.Choice(["gpt-4o-transcribe", "gpt-4o-transcribe-diarize"], case_sensitive=False),
+    default="gpt-4o-transcribe",
+    help="Transcription model to use.",
+)
+@click.option(
+    "--prompt",
+    "-p",
+    help="Optional context prompt (NOT supported with diarize model). "
+         "Useful for technical terms, acronyms, or topic context.",
+)
+@click.option(
+    "--format",
+    "-f",
+    "response_format",
+    type=click.Choice(["text", "json", "verbose_json", "diarized_json"], case_sensitive=False),
+    default="json",
+    help="Response format. 'diarized_json' requires diarize model.",
+)
+@click.option(
+    "--language",
+    "-l",
+    help="Language code (e.g., 'ru', 'en'). Auto-detect if not specified.",
+)
+@click.option(
+    "--temperature",
+    type=click.FloatRange(0, 1),
+    default=0,
+    help="Sampling temperature (0-1). Lower = more deterministic.",
+)
+@click.option(
+    "--keep-audio",
+    is_flag=True,
+    help="Keep intermediate audio file for debugging. Saved next to video file.",
+)
+def process(
+    video_path: str,
+    output: str | None,
+    model: str,
+    prompt: str | None,
+    response_format: str,
+    language: str | None,
+    temperature: float,
+    keep_audio: bool,
+) -> None:
+    """Transcribe video file directly to text.
+
+    This command combines video conversion and transcription in one step.
+
+    Examples:
+        video-transcribe process meeting.mp4
+        video-transcribe process meeting.mp4 -o transcript.txt
+        video-transcribe process meeting.mp4 -m gpt-4o-transcribe-diarize
+        video-transcribe process meeting.mp4 --keep-audio
+        video-transcribe process meeting.mp4 -l ru
+    """
+    try:
+        click.echo(f"Processing {video_path}...")
+
+        if keep_audio:
+            click.echo("Audio will be saved for debugging.", err=True)
+
+        result = process_video(
+            video_path=video_path,
+            output_path=output,
+            model=model,  # type: ignore
+            prompt=prompt,
+            response_format=response_format,  # type: ignore
+            language=language,
+            temperature=temperature,
+            keep_audio=keep_audio,
+        )
+
+        click.echo(f"Transcription saved: {result.output_path}")
+        if result.audio_path:
+            click.echo(f"Audio saved: {result.audio_path}")
+
+        click.echo(f"---", err=True)
+        click.echo(f"Model: {result.transcript.model_used}", err=True)
+        click.echo(f"Duration: {result.transcript.duration:.2f}s" if result.transcript.duration else "Duration: N/A", err=True)
+
+    except FileNotFoundError as e:
+        click.echo(f"Error: {e}", err=True)
+        raise click.Abort()
+    except RuntimeError as e:
+        click.echo(f"Error: {e}", err=True)
+        raise click.Abort()
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         raise click.Abort()

@@ -30,6 +30,7 @@
 - [x] Модуль извлечения аудио (FFmpeg)
 - [x] Адаптер транскрибации
 - [x] Реализация OpenAI (gpt-4o-transcribe, gpt-4o-transcribe-diarize)
+- [x] Pipeline модуль (process команда)
 - [ ] Модуль нарезки аудио
 - [ ] Модуль summary (GLM 4.7)
 - [x] CLI-интерфейс

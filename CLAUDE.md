@@ -18,6 +18,7 @@ python3 -m venv .venv
 .venv/bin/video-transcribe convert video.mp4 -o output/audio.mp3
 .venv/bin/video-transcribe transcribe meeting.mp3
 .venv/bin/video-transcribe transcribe meeting.mp3 -m gpt-4o-transcribe-diarize -l ru
+.venv/bin/video-transcribe process meeting.mp4
 
 # Entry point: src/video_transcribe/__main__.py:main
 ```
@@ -34,6 +35,7 @@ Merge → Context Injection → Markdown output
 **Planned module structure:**
 - `src/video_transcribe/audio/` — Audio extraction and chunking (FFmpeg/PyDub)
 - `src/video_transcribe/transcribe/` — Adapter pattern for multiple ASR services
+- `src/video_transcribe/pipeline.py` — Pipeline orchestration (video → text)
 - `src/video_transcribe/summary/` — LLM-based meeting summarization
 - `src/video_transcribe/cli.py` — Click-based CLI interface
 
@@ -65,7 +67,8 @@ Environment variables (`.env`):
 - Transcription adapter with OpenAI (`transcribe/adapter.py`)
   - `gpt-4o-transcribe` — supports prompt for context
   - `gpt-4o-transcribe-diarize` — speaker diarization
-- CLI with `convert` and `transcribe` commands
+- Pipeline orchestration (`pipeline.py`) — video → text in one step
+- CLI with `convert`, `transcribe`, and `process` commands
 - `.env` support via `python-dotenv`
 
 **Pending:**
