@@ -7,9 +7,9 @@
 | **Python**          | 3.11+ (типизация)                                 |
 | **Окружение**       | venv                                              |
 | **FFmpeg**          | Через subprocess                                  |
-| **Транскрибация**   | Адаптер + Whisper (основной) + ZAI (альтернатива) |
+| **Транскрибация**   | OpenAI gpt-4o-transcribe (основной), gpt-4o-transcribe-diarize (спикеры) + ZAI (альтернатива, в планах) |
 | **LLM для summary** | GLM 4.7 (OpenAI-совместимая)                      |
-| **CLI**             | TBD (research phase)                              |
+| **CLI**             | Click 8.1+                                         |
 | **Конфигурация**    | .env (без YAML пока)                              |
 
 ## Параметры пайплайна

@@ -29,7 +29,30 @@ python3 -m venv .venv
 .venv/bin/video-transcribe convert video.mp4 -o output/audio.mp3
 ```
 
-Output format: MP3, 16 kHz, mono (optimized for Whisper API).
+Output format: MP3, 16 kHz, mono (optimized for OpenAI API).
+
+### Transcribe audio to text
+
+```bash
+# Basic transcription
+.venv/bin/video-transcribe transcribe meeting.mp3
+
+# With speaker diarization
+.venv/bin/video-transcribe transcribe meeting.mp3 -m gpt-4o-transcribe-diarize
+
+# With context prompt (for technical terms, acronyms)
+.venv/bin/video-transcribe transcribe tutorial.mp3 -p "Technical terms: API, microservices, DevOps"
+
+# Specify language
+.venv/bin/video-transcribe transcribe meeting.mp3 -l ru
+
+# Save to file
+.venv/bin/video-transcribe transcribe meeting.mp3 -o transcript.txt
+```
+
+**Available models:**
+- `gpt-4o-transcribe` — supports prompt parameter for context
+- `gpt-4o-transcribe-diarize` — speaker diarization (no prompt support)
 
 ## Configuration
 

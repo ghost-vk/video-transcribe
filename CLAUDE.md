@@ -16,6 +16,8 @@ python3 -m venv .venv
 # Run CLI
 .venv/bin/video-transcribe convert video.mp4
 .venv/bin/video-transcribe convert video.mp4 -o output/audio.mp3
+.venv/bin/video-transcribe transcribe meeting.mp3
+.venv/bin/video-transcribe transcribe meeting.mp3 -m gpt-4o-transcribe-diarize -l ru
 
 # Entry point: src/video_transcribe/__main__.py:main
 ```
@@ -37,11 +39,12 @@ Merge → Context Injection → Markdown output
 
 ## Key Technical Decisions
 
-**Audio Format:** MP3, 16kHz mono — optimized for Whisper API ingestion (defined in `config.py`)
+**Audio Format:** MP3, 16kHz mono — optimized for OpenAI API ingestion (defined in `config.py`)
 
 **ASR Services:**
-- Primary: OpenAI Whisper API (supports diarization, 25MB limit)
-- Alternative: ZAI GLM-ASR-2512 (cheaper, no diarization, 30-sec chunks)
+- Primary: OpenAI `gpt-4o-transcribe` (with prompt support, 25MB limit)
+- Diarization: OpenAI `gpt-4o-transcribe-diarize` (speaker labels, no prompt)
+- Alternative (planned): ZAI GLM-ASR-2512 (cheaper, no diarization, 30-sec chunks)
 
 **Summarization:** GLM 4.7 via OpenAI-compatible API
 
@@ -59,13 +62,17 @@ Environment variables (`.env`):
 
 **Implemented:**
 - Video to audio conversion (`audio/converter.py`)
-- Basic CLI with `convert` command
+- Transcription adapter with OpenAI (`transcribe/adapter.py`)
+  - `gpt-4o-transcribe` — supports prompt for context
+  - `gpt-4o-transcribe-diarize` — speaker diarization
+- CLI with `convert` and `transcribe` commands
+- `.env` support via `python-dotenv`
 
 **Pending:**
-- Transcription adapter with Whisper/ZAI implementations
-- Audio chunking for API limits
+- Audio chunking for API limits (25MB)
 - Summary module (GLM 4.7)
-- Speaker diarization integration
+- ZAI alternative implementation
+- Tests
 
 ## System Dependencies
 
