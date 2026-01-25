@@ -2,6 +2,11 @@
 
 Automated video transcription with speaker diarization and meeting summaries.
 
+## Requirements
+
+- Python >= 3.11
+- ffmpeg — [install instructions](https://ffmpeg.org/download.html)
+
 ## Installation
 
 ```bash
@@ -14,13 +19,17 @@ python3 -m venv .venv
 
 ## Usage
 
-```bash
-# Run via module
-.venv/bin/python -m video_transcribe
+### Convert video to audio
 
-# Or via CLI command
-.venv/bin/video-transcribe
+```bash
+# Convert with default output (same directory, .mp3 extension)
+.venv/bin/video-transcribe convert video.mp4
+
+# Convert with custom output path
+.venv/bin/video-transcribe convert video.mp4 -o output/audio.mp3
 ```
+
+Output format: MP3, 16 kHz, mono (optimized for Whisper API).
 
 ## Configuration
 

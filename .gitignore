@@ -30,3 +30,6 @@ htmlcov/
 .idea/
 *.swp
 *.swo
+
+**/**/*.mp4
+**/**/*.mp3
