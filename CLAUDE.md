@@ -43,6 +43,13 @@ Merge → Context Injection → Markdown output
 
 **Audio Format:** MP3, 16kHz mono — optimized for OpenAI API ingestion (defined in `config.py`)
 
+**Chunking Strategy:**
+- Files >20MB automatically split into chunks
+- 2-second overlap between chunks for context preservation
+- Speaker renumbering across chunks (A,B → A,B,C,D for new speakers in each chunk)
+- Supports >26 speakers (A-Z, then AA, AB, AC...)
+- Uses `tempfile.gettempdir()` for cross-platform compatibility
+
 **ASR Services:**
 - Primary: OpenAI `gpt-4o-transcribe` (with prompt support, 25MB limit)
 - Diarization: OpenAI `gpt-4o-transcribe-diarize` (speaker labels, no prompt)
@@ -59,20 +66,24 @@ Environment variables (`.env`):
 - `ZAI_API_KEY` — Alternative ASR
 - `GLM_API_KEY` — GLM 4.7 summarization
 - `GLM_BASE_URL` — Default: `https://open.bigmodel.cn/api/paas/v4`
+- `CHUNK_MAX_SIZE_MB` — Max chunk size in MB (default: 20)
+- `CHUNK_OVERLAP_SEC` — Overlap between chunks in seconds (default: 2.0)
 
 ## Current Status (Phase 3: MVP)
 
 **Implemented:**
 - Video to audio conversion (`audio/converter.py`)
+- Audio chunking (`audio/chunker.py`) — split large files with overlap
 - Transcription adapter with OpenAI (`transcribe/adapter.py`)
+  - `transcribe_chunked()` — automatic chunking for files >20MB
   - `gpt-4o-transcribe` — supports prompt for context
   - `gpt-4o-transcribe-diarize` — speaker diarization
+- Result merger (`transcribe/merger.py`) — combine chunks with speaker renumbering
 - Pipeline orchestration (`pipeline.py`) — video → text in one step
 - CLI with `convert`, `transcribe`, and `process` commands
 - `.env` support via `python-dotenv`
 
 **Pending:**
-- Audio chunking for API limits (25MB)
 - Summary module (GLM 4.7)
 - ZAI alternative implementation
 - Tests

@@ -16,8 +16,9 @@
 
 | Параметр          | Значение                             |
 | ----------------- | ------------------------------------ |
-| Нарезка аудио     | По времени (default: 30 сек, из env) |
-| Перекрытие кусков | Да (настраивается)                   |
+| Нарезка аудио     | По размеру файла (>20MB)             |
+| Размер чанка      | 20MB (CHUNK_MAX_SIZE_MB, из env)     |
+| Перекрытие кусков | 2 сек (CHUNK_OVERLAP_SEC, из env)    |
 | Отправка в API    | Последовательно                      |
 | Обработка ошибок  | Минимум, без retry в MVP             |
 
@@ -26,7 +27,13 @@
 ```
 src/
 ├── audio/          # извлечение/нарезка аудио
-├── transcribe/     # адаптер + реализации (Whisper, ZAI)
+│   ├── converter.py    # FFmpeg video → audio
+│   └── chunker.py      # Split large files with overlap
+├── transcribe/     # адаптер + реализации
+│   ├── adapter.py      # OpenAI API wrapper
+│   ├── models.py       # Data models
+│   ├── merger.py       # Merge chunked results
+│   └── exceptions.py   # Custom exceptions
 ├── summary/        # LLM вызовы
 └── cli.py          # точка входа
 ```

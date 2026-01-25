@@ -48,11 +48,19 @@ Output format: MP3, 16 kHz, mono (optimized for OpenAI API).
 
 # Save to file
 .venv/bin/video-transcribe transcribe meeting.mp3 -o transcript.txt
+
+# Large files are automatically chunked (progress shown)
+.venv/bin/video-transcribe transcribe large-meeting.mp3
+# Output: Processing chunk 1/3...
+#         Processing chunk 2/3...
+#         Processing chunk 3/3...
 ```
 
 **Available models:**
 - `gpt-4o-transcribe` — supports prompt parameter for context
 - `gpt-4o-transcribe-diarize` — speaker diarization (no prompt support)
+
+**Large file support:** Files exceeding 20MB are automatically split into chunks with overlap, processed sequentially, and merged with adjusted timestamps. Speaker labels are renumbered across chunks (A,B → A,B,C,D).
 
 ### Process video to text (one step)
 
@@ -88,3 +96,7 @@ Required API keys:
 - `OPENAI_API_KEY` — for Whisper transcription
 - `GLM_API_KEY` — for GLM 4.7 summarization
 - `ZAI_API_KEY` — optional, for alternative transcription
+
+Optional chunking settings (for fine-tuning large file handling):
+- `CHUNK_MAX_SIZE_MB=20` — Safe margin from 25MB API limit (default: 20)
+- `CHUNK_OVERLAP_SEC=2.0` — Overlap between chunks in seconds (default: 2.0)
