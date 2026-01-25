@@ -78,14 +78,25 @@ def transcribe(
     try:
         adapter = OpenAIAdapter()
 
-        click.echo(f"Transcribing {audio_path} using {model}...")
-        result = adapter.transcribe(
+        file_size_mb = Path(audio_path).stat().st_size / (1024 * 1024)
+        if file_size_mb > 20:
+            click.echo(f"Transcribing {audio_path} using {model} (chunked)...")
+        else:
+            click.echo(f"Transcribing {audio_path} using {model}...")
+
+        # Progress callback for chunked processing
+        def progress_callback(current: int, total: int) -> None:
+            if total > 1:
+                click.echo(f"  Processing chunk {current}/{total}...", err=True)
+
+        result = adapter.transcribe_chunked(
             audio_path=audio_path,
             model=model,  # type: ignore
             prompt=prompt,
             response_format=response_format,  # type: ignore
             language=language,
             temperature=temperature,
+            progress_callback=progress_callback,
         )
 
         if output:
@@ -203,6 +214,11 @@ def process(
         if keep_audio:
             click.echo("Audio will be saved for debugging.", err=True)
 
+        # Progress callback for chunked processing
+        def progress_callback(current: int, total: int) -> None:
+            if total > 1:
+                click.echo(f"  Processing chunk {current}/{total}...", err=True)
+
         result = process_video(
             video_path=video_path,
             output_path=output,
@@ -212,6 +228,7 @@ def process(
             language=language,
             temperature=temperature,
             keep_audio=keep_audio,
+            progress_callback=progress_callback,
         )
 
         click.echo(f"Transcription saved: {result.output_path}")

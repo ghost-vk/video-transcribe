@@ -1,8 +1,10 @@
 """Transcription adapter using OpenAI API."""
 
+from collections.abc import Callable
 from pathlib import Path
 from openai import OpenAI
 from dotenv import load_dotenv
+from video_transcribe.config import CHUNK_MAX_SIZE_MB
 from video_transcribe.transcribe.models import (
     TranscriptionModel,
     ResponseFormat,
@@ -17,6 +19,8 @@ from video_transcribe.transcribe.exceptions import (
     InvalidAudioFormatError,
     TranscriptionError,
 )
+from video_transcribe.audio import split_audio, cleanup_chunks, AudioChunk
+from video_transcribe.transcribe.merger import merge_results
 
 # Supported audio formats per OpenAI docs
 SUPPORTED_FORMATS = {".mp3", ".mp4", ".mpeg", ".mpga", ".m4a", ".wav", ".webm"}
@@ -204,3 +208,112 @@ class OpenAIAdapter:
             model_used=model,
             response_format=response_format,
         )
+
+    def transcribe_chunked(
+        self,
+        audio_path: str,
+        model: TranscriptionModel = "gpt-4o-transcribe",
+        prompt: str | None = None,
+        response_format: ResponseFormat = "json",
+        language: str | None = None,
+        temperature: float = 0,
+        progress_callback: Callable[[int, int], None] | None = None,
+    ) -> TranscriptionResult:
+        """Transcribe audio file with automatic chunking for large files.
+
+        Automatically detects when chunking is needed and processes chunks
+        sequentially.
+
+        Args:
+            audio_path: Path to audio file.
+            model: Model to use.
+            prompt: Optional context prompt (not supported with diarize model).
+            response_format: Output format.
+            language: Optional language code.
+            temperature: Sampling temperature.
+            progress_callback: Optional callback(current, total) for progress updates.
+
+        Returns:
+            TranscriptionResult with merged segments and adjusted timestamps.
+
+        Raises:
+            AudioFileNotFoundError: If audio file doesn't exist.
+            InvalidAudioFormatError: If file format not supported.
+            TranscriptionError: If transcription fails.
+        """
+        # Validate audio file exists and format
+        audio_file = Path(audio_path)
+        if not audio_file.exists():
+            raise AudioFileNotFoundError(f"Audio file not found: {audio_path}")
+
+        if audio_file.suffix.lower() not in self.SUPPORTED_FORMATS:
+            raise InvalidAudioFormatError(
+                f"Unsupported format: {audio_file.suffix}. "
+                f"Supported formats: {', '.join(self.SUPPORTED_FORMATS)}"
+            )
+
+        # Validate prompt compatibility
+        if model == self.DIARIZE_MODEL and prompt:
+            raise PromptNotSupportedError(
+                f"Prompt parameter is not supported by {self.DIARIZE_MODEL}. "
+                f"Use 'gpt-4o-transcribe' for prompt-based transcription."
+            )
+
+        # Check if chunking needed
+        file_size_mb = audio_file.stat().st_size / (1024 * 1024)
+
+        if file_size_mb <= CHUNK_MAX_SIZE_MB:
+            # No chunking needed - use standard transcription
+            return self.transcribe(
+                audio_path=audio_path,
+                model=model,
+                prompt=prompt,
+                response_format=response_format,
+                language=language,
+                temperature=temperature,
+            )
+
+        # Chunking required
+        try:
+            chunks = split_audio(audio_path=audio_path)
+        except Exception as e:
+            raise TranscriptionError(f"Failed to split audio: {e}") from e
+
+        try:
+            # Determine if diarization is enabled
+            has_diarization = model == self.DIARIZE_MODEL or response_format == "diarized_json"
+
+            # Process chunks sequentially
+            results: list[TranscriptionResult] = []
+            chunk_offsets: list[float] = []
+
+            for i, chunk in enumerate(chunks):
+                if progress_callback:
+                    progress_callback(i + 1, len(chunks))
+
+                # Use verbose_json or diarized_json for chunking to get segments
+                chunk_response_format = "diarized_json" if has_diarization else "verbose_json"
+
+                result = self.transcribe(
+                    audio_path=chunk.path,
+                    model=model,
+                    prompt=None,  # Never use prompt with chunks
+                    response_format=chunk_response_format,
+                    language=language,
+                    temperature=temperature,
+                )
+                results.append(result)
+                chunk_offsets.append(chunk.start_sec)
+
+            # Merge results
+            merged = merge_results(
+                results=results,
+                chunk_offsets=chunk_offsets,
+                has_diarization=has_diarization,
+            )
+
+            return merged
+
+        finally:
+            # Always cleanup chunks
+            cleanup_chunks(chunks)

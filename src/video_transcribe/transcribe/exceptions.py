@@ -28,3 +28,8 @@ class APIKeyMissingError(TranscriptionError):
 class AudioFileNotFoundError(TranscriptionError):
     """Raised when audio file doesn't exist."""
     pass
+
+
+class ChunkingError(TranscriptionError):
+    """Raised when audio chunking fails."""
+    pass

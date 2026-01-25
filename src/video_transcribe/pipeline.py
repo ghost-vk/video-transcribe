@@ -1,7 +1,8 @@
 """Video to text pipeline orchestration."""
 
 import json
-import time
+import tempfile
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -15,9 +16,6 @@ from video_transcribe.transcribe.models import (
 
 # Video file extensions to recognize
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
-
-# Scratchpad directory for temp files
-SCRATCHPAD_DIR = "/tmp/claude/-home-v-gitlab-com-video-transcribe/049a38f0-fa96-4db3-9ec8-00c6724c77d9/scratchpad"
 
 
 @dataclass
@@ -51,6 +49,7 @@ def process_video(
     language: str | None = None,
     temperature: float = 0,
     keep_audio: bool = False,
+    progress_callback: Callable[[int, int], None] | None = None,
 ) -> ProcessResult:
     """Process video file to text transcript.
 
@@ -66,6 +65,7 @@ def process_video(
         temperature: Sampling temperature (0-1).
         keep_audio: If True, keep intermediate audio file next to video.
                    If False, use temp file and delete after transcription.
+        progress_callback: Optional callback(current, total) for progress updates.
 
     Returns:
         ProcessResult with video path, audio path (None if deleted),
@@ -86,23 +86,24 @@ def process_video(
     if keep_audio:
         audio_path = str(video_file.with_suffix(".mp3"))
     else:
-        # Use scratchpad for temp file
-        timestamp = int(time.time())
-        audio_path = f"{SCRATCHPAD_DIR}/video-transcribe-{timestamp}.mp3"
-        Path(SCRATCHPAD_DIR).mkdir(parents=True, exist_ok=True)
+        # Use system temp directory for temp file
+        temp_dir = Path(tempfile.gettempdir()) / "video-transcribe"
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        audio_path = str(temp_dir / f"{video_file.stem}-{id(video_path)}.mp3")
 
     # 3. Convert video to audio
     audio_path_result = video_to_audio(video_path, audio_path)
 
-    # 4. Transcribe audio
+    # 4. Transcribe audio with automatic chunking
     adapter = OpenAIAdapter()
-    transcript = adapter.transcribe(
+    transcript = adapter.transcribe_chunked(
         audio_path=audio_path_result,
         model=model,
         prompt=prompt,
         response_format=response_format,
         language=language,
         temperature=temperature,
+        progress_callback=progress_callback,
     )
 
     # 5. Determine output path

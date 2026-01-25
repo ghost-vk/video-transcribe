@@ -14,7 +14,9 @@ from video_transcribe.transcribe.exceptions import (
     PromptNotSupportedError,
     APIKeyMissingError,
     AudioFileNotFoundError,
+    ChunkingError,
 )
+from video_transcribe.transcribe.merger import merge_results
 
 __all__ = [
     # Adapters
@@ -31,4 +33,7 @@ __all__ = [
     "PromptNotSupportedError",
     "APIKeyMissingError",
     "AudioFileNotFoundError",
+    "ChunkingError",
+    # Merger
+    "merge_results",
 ]
