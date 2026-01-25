@@ -7,6 +7,7 @@ from pathlib import Path
 from video_transcribe.audio import video_to_audio
 from video_transcribe.transcribe import OpenAIAdapter
 from video_transcribe.pipeline import process_video
+from video_transcribe.postprocess import list_presets
 
 
 @click.group()
@@ -187,6 +188,19 @@ def transcribe(
     is_flag=True,
     help="Keep intermediate audio file for debugging. Saved next to video file.",
 )
+@click.option(
+    "--postprocess",
+    is_flag=True,
+    help="Enable LLM post-processing (summary, cleanup, etc.).",
+)
+@click.option(
+    "--preset",
+    "-P",
+    "postprocess_preset",
+    type=click.Choice(list_presets(), case_sensitive=False),
+    default="it_meeting_summary",
+    help="Preset for post-processing.",
+)
 def process(
     video_path: str,
     output: str | None,
@@ -196,6 +210,8 @@ def process(
     language: str | None,
     temperature: float,
     keep_audio: bool,
+    postprocess: bool,
+    postprocess_preset: str,
 ) -> None:
     """Transcribe video file directly to text.
 
@@ -207,6 +223,7 @@ def process(
         video-transcribe process meeting.mp4 -m gpt-4o-transcribe-diarize
         video-transcribe process meeting.mp4 --keep-audio
         video-transcribe process meeting.mp4 -l ru
+        video-transcribe process tutorial.mp4 --postprocess --preset screencast_cleanup
     """
     try:
         click.echo(f"Processing {video_path}...")
@@ -229,11 +246,15 @@ def process(
             temperature=temperature,
             keep_audio=keep_audio,
             progress_callback=progress_callback,
+            postprocess=postprocess,
+            postprocess_preset=postprocess_preset,
         )
 
         click.echo(f"Transcription saved: {result.output_path}")
         if result.audio_path:
             click.echo(f"Audio saved: {result.audio_path}")
+        if result.postprocess:
+            click.echo(f"Post-process saved: {result.postprocess.output_path}", err=True)
 
         click.echo(f"---", err=True)
         click.echo(f"Model: {result.transcript.model_used}", err=True)

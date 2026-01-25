@@ -32,7 +32,9 @@
 - [x] Адаптер транскрибации
 - [x] Реализация OpenAI (gpt-4o-transcribe, gpt-4o-transcribe-diarize)
 - [x] Pipeline модуль (process команда)
-- [ ] Модуль summary (GLM 4.7)
+- [x] Модуль postprocess (GLM 4.7 / gpt-5-mini)
+  - [x] it_meeting_summary preset
+  - [x] screencast_cleanup preset
 - [x] CLI-интерфейс
 - [ ] Базовые тесты
 

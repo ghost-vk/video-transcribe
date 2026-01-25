@@ -29,14 +29,14 @@ The project follows a modular pipeline architecture:
 
 ```
 Video → Audio → Chunking → Transcription (with diarization) →
-Merge → Context Injection → Markdown output
+Merge → [Post-processing] → Markdown output
 ```
 
-**Planned module structure:**
+**Module structure:**
 - `src/video_transcribe/audio/` — Audio extraction and chunking (FFmpeg/PyDub)
 - `src/video_transcribe/transcribe/` — Adapter pattern for multiple ASR services
+- `src/video_transcribe/postprocess/` — LLM-based text transformation (GLM-4.7 / gpt-5-mini)
 - `src/video_transcribe/pipeline.py` — Pipeline orchestration (video → text)
-- `src/video_transcribe/summary/` — LLM-based meeting summarization
 - `src/video_transcribe/cli.py` — Click-based CLI interface
 
 ## Key Technical Decisions
@@ -55,7 +55,11 @@ Merge → Context Injection → Markdown output
 - Diarization: OpenAI `gpt-4o-transcribe-diarize` (speaker labels, no prompt)
 - Alternative (planned): ZAI GLM-ASR-2512 (cheaper, no diarization, 30-sec chunks)
 
-**Summarization:** GLM 4.7 via OpenAI-compatible API
+**Post-processing:**
+- OpenAI-compatible LLM client (configurable provider)
+- Default: gpt-5-mini via OpenAI API
+- Can use any OpenAI-compatible provider (GLM-4.7, etc.)
+- Two presets: `it_meeting_summary` and `screencast_cleanup`
 
 **CLI Framework:** Click (chosen over Typer/rich-cli)
 
@@ -63,9 +67,12 @@ Merge → Context Injection → Markdown output
 
 Environment variables (`.env`):
 - `OPENAI_API_KEY` — Whisper transcription
+- `OPENAI_BASE_URL` — Optional, for OpenAI-compatible transcription API
+- `POSTPROCESS_API_KEY` — Post-processing LLM (defaults to OPENAI_API_KEY)
+- `POSTPROCESS_BASE_URL` — Optional, for OpenAI-compatible post-processing API
+- `POSTPROCESS_MODEL` — Model name (default: gpt-5-mini)
+- `POSTPROCESS_TEMPERATURE` — Sampling temperature (default: 0.3)
 - `ZAI_API_KEY` — Alternative ASR
-- `GLM_API_KEY` — GLM 4.7 summarization
-- `GLM_BASE_URL` — Default: `https://open.bigmodel.cn/api/paas/v4`
 - `CHUNK_MAX_SIZE_MB` — Max chunk size in MB (default: 20)
 - `CHUNK_OVERLAP_SEC` — Overlap between chunks in seconds (default: 2.0)
 
@@ -79,12 +86,15 @@ Environment variables (`.env`):
   - `gpt-4o-transcribe` — supports prompt for context
   - `gpt-4o-transcribe-diarize` — speaker diarization
 - Result merger (`transcribe/merger.py`) — combine chunks with speaker renumbering
-- Pipeline orchestration (`pipeline.py`) — video → text in one step
+- Post-processing module (`postprocess/`)
+  - OpenAI-compatible LLM client (configurable provider/model)
+  - `it_meeting_summary` preset — structured meeting summaries
+  - `screencast_cleanup` preset — screencast → tutorial conversion
+- Pipeline orchestration (`pipeline.py`) — video → text → [postprocess]
 - CLI with `convert`, `transcribe`, and `process` commands
 - `.env` support via `python-dotenv`
 
 **Pending:**
-- Summary module (GLM 4.7)
 - ZAI alternative implementation
 - Tests
 

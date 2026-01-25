@@ -14,6 +14,10 @@ DEFAULT_TRANSCRIPTION_MODEL: str = "gpt-4o-transcribe"
 DEFAULT_TRANSCRIPTION_LANGUAGE: str | None = None  # Auto-detect
 DEFAULT_TRANSCRIPTION_TEMPERATURE: float = 0  # Deterministic
 
+# OpenAI API for transcription
+OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+OPENAI_BASE_URL: str | None = os.getenv("OPENAI_BASE_URL")  # Optional, uses default if None
+
 # API limits
 OPENAI_MAX_FILE_SIZE_MB: int = 25
 OPENAI_SUPPORTED_AUDIO_FORMATS = {".mp3", ".mp4", ".mpeg", ".mpga", ".m4a", ".wav", ".webm"}
@@ -21,6 +25,16 @@ OPENAI_SUPPORTED_AUDIO_FORMATS = {".mp3", ".mp4", ".mpeg", ".mpga", ".m4a", ".wa
 # Chunking settings
 CHUNK_MAX_SIZE_MB: int = int(os.getenv("CHUNK_MAX_SIZE_MB", "20"))
 CHUNK_OVERLAP_SEC: float = float(os.getenv("CHUNK_OVERLAP_SEC", "2.0"))
+
+# Post-processing settings
+POSTPROCESS_API_KEY: str = os.getenv("POSTPROCESS_API_KEY", "") or os.getenv("OPENAI_API_KEY", "")
+POSTPROCESS_BASE_URL: str | None = os.getenv("POSTPROCESS_BASE_URL")  # Optional, uses default if None
+DEFAULT_POSTPROCESS_MODEL: str = os.getenv("POSTPROCESS_MODEL", "gpt-5-mini")
+DEFAULT_POSTPROCESS_TEMPERATURE: float = float(os.getenv("POSTPROCESS_TEMPERATURE", "0.3"))
+
+# Legacy aliases (for backward compatibility)
+GLM_API_KEY: str = POSTPROCESS_API_KEY
+GLM_BASE_URL: str | None = POSTPROCESS_BASE_URL
 
 
 def validate_config() -> None:
@@ -38,3 +52,11 @@ def validate_config() -> None:
         )
     if CHUNK_OVERLAP_SEC < 0:
         raise ValueError(f"CHUNK_OVERLAP_SEC must be non-negative, got {CHUNK_OVERLAP_SEC}")
+
+    # Post-process API key warning (not error - post-processing is optional)
+    if not POSTPROCESS_API_KEY:
+        import warnings
+        warnings.warn(
+            "POSTPROCESS_API_KEY not set in .env - post-processing will not be available. "
+            "Set POSTPROCESS_API_KEY or OPENAI_API_KEY to enable post-processing."
+        )

@@ -84,6 +84,29 @@ Output format: MP3, 16 kHz, mono (optimized for OpenAI API).
 .venv/bin/video-transcribe process meeting.mp4 -o transcripts/meeting.txt
 ```
 
+### Post-processing with LLM
+
+```bash
+# IT meeting summary
+.venv/bin/video-transcribe process meeting.mp4 --postprocess
+# Creates: meeting.mp4.txt + meeting.mp4.summary.md
+
+# Screencast cleanup (tutorial format)
+.venv/bin/video-transcribe process tutorial.mp4 --postprocess --preset screencast_cleanup
+# Creates: tutorial.mp4.txt + tutorial.mp4.screencast.md
+
+# Full example with all options
+.venv/bin/video-transcribe process standup.mp4 \
+  -m gpt-4o-transcribe-diarize \
+  -l ru \
+  --postprocess \
+  --preset it_meeting_summary
+```
+
+**Available presets:**
+- `it_meeting_summary` — structured meeting summary with action items
+- `screencast_cleanup` — convert screencast to structured tutorial
+
 ## Configuration
 
 Copy `.env.example` to `.env` and add your API keys:
@@ -92,10 +115,24 @@ Copy `.env.example` to `.env` and add your API keys:
 cp .env.example .env
 ```
 
-Required API keys:
+### Required API keys
+
 - `OPENAI_API_KEY` — for Whisper transcription
-- `GLM_API_KEY` — for GLM 4.7 summarization
-- `ZAI_API_KEY` — optional, for alternative transcription
+- `POSTPROCESS_API_KEY` — for LLM post-processing (optional, defaults to OPENAI_API_KEY)
+
+### Optional settings
+
+**Transcription:**
+- `OPENAI_BASE_URL` — use OpenAI-compatible API for transcription
+
+**Post-processing:**
+- `POSTPROCESS_BASE_URL` — use OpenAI-compatible API for post-processing
+- `POSTPROCESS_MODEL` — model name (default: gpt-5-mini)
+  - Examples: gpt-5-mini, gpt-4o-mini, gpt-4o, glm-4.7, llama-3.1-70b
+- `POSTPROCESS_TEMPERATURE` — sampling temperature (default: 0.3)
+
+**Alternative transcription:**
+- `ZAI_API_KEY` — for ZAI GLM-ASR transcription
 
 Optional chunking settings (for fine-tuning large file handling):
 - `CHUNK_MAX_SIZE_MB=20` — Safe margin from 25MB API limit (default: 20)

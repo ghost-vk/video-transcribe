@@ -31,5 +31,7 @@ htmlcov/
 *.swp
 *.swo
 
+test_data
 **/**/*.mp4
 **/**/*.mp3
+!test_data/.gitignore

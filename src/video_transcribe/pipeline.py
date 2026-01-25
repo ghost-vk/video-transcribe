@@ -2,6 +2,7 @@
 
 import json
 import tempfile
+import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,6 +14,9 @@ from video_transcribe.transcribe.models import (
     ResponseFormat,
     TranscriptionResult,
 )
+from video_transcribe.postprocess import TextProcessor, save_postprocess_result, PromptPreset
+from video_transcribe.postprocess.models import PostprocessResult
+from video_transcribe.postprocess.exceptions import PostprocessError
 
 # Video file extensions to recognize
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
@@ -25,7 +29,8 @@ class ProcessResult:
     video_path: str
     audio_path: str | None  # None if deleted
     transcript: TranscriptionResult
-    output_path: str | None
+    postprocess: PostprocessResult | None = None  # NEW: post-processing result
+    output_path: str | None = None
 
 
 def is_video_file(path: str) -> bool:
@@ -50,10 +55,12 @@ def process_video(
     temperature: float = 0,
     keep_audio: bool = False,
     progress_callback: Callable[[int, int], None] | None = None,
+    postprocess: bool = False,
+    postprocess_preset: str = "it_meeting_summary",
 ) -> ProcessResult:
     """Process video file to text transcript.
 
-    Pipeline: video → audio → text → file
+    Pipeline: video → audio → text → [postprocess] → file
 
     Args:
         video_path: Path to video file.
@@ -66,10 +73,12 @@ def process_video(
         keep_audio: If True, keep intermediate audio file next to video.
                    If False, use temp file and delete after transcription.
         progress_callback: Optional callback(current, total) for progress updates.
+        postprocess: Enable LLM post-processing (default: False).
+        postprocess_preset: Preset name - "it_meeting_summary" or "screencast_cleanup".
 
     Returns:
         ProcessResult with video path, audio path (None if deleted),
-        transcript result, and output path.
+        transcript result, optional postprocess result, and output path.
 
     Raises:
         FileNotFoundError: If video file doesn't exist.
@@ -137,6 +146,25 @@ def process_video(
             encoding="utf-8",
         )
 
+    # 6.5. Optional post-processing
+    postprocess_result: PostprocessResult | None = None
+
+    if postprocess:
+        try:
+            processor = TextProcessor()
+            preset = PromptPreset(postprocess_preset)
+            postprocess_result = processor.process(transcript, preset)
+
+            # Save to separate markdown file
+            postprocess_path = save_postprocess_result(output_path, preset)
+            processor.save_to_file(postprocess_result, postprocess_path)
+
+        except PostprocessError as e:
+            # Do NOT interrupt pipeline - transcript is already saved
+            warnings.warn(f"Post-processing failed: {e}. Transcript saved successfully.")
+        except Exception as e:
+            warnings.warn(f"Unexpected error in post-processing: {e}")
+
     # 7. Cleanup temp audio if not keeping
     final_audio_path: str | None = audio_path_result
     if not keep_audio:
@@ -147,5 +175,6 @@ def process_video(
         video_path=video_path,
         audio_path=final_audio_path,
         transcript=transcript,
+        postprocess=postprocess_result,
         output_path=output_path,
     )
