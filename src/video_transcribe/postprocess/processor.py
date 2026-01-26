@@ -79,6 +79,7 @@ class TextProcessor:
         Supported placeholders:
         - {transcript} - full text
         - {segments} - formatted segments with speakers
+        - {speakers_info} - speakers statistics
         - {duration} - duration in seconds
         - {duration_minutes} - duration in minutes
         - {duration_formatted} - HH:MM:SS formatted
@@ -104,6 +105,7 @@ class TextProcessor:
         return template.format(
             transcript=transcript.text,
             segments=self._format_segments(transcript.segments),
+            speakers_info=self._extract_speakers_info(transcript.segments),
             duration=transcript.duration,
             duration_minutes=duration_min,
             duration_formatted=duration_formatted,
@@ -141,6 +143,31 @@ class TextProcessor:
             speaker = f"[{seg.speaker}] " if seg.speaker else ""
             timestamp = f"({seg.start:.1f}-{seg.end:.1f}) "
             lines.append(f"{timestamp}{speaker}{seg.text}")
+        return "\n".join(lines)
+
+    def _extract_speakers_info(self, segments: list[TranscriptionSegment]) -> str:
+        """Extract speakers statistics from segments.
+
+        Args:
+            segments: List of transcription segments.
+
+        Returns:
+            Formatted string with speaker counts.
+        """
+        speaker_counts: dict[str, int] = {}
+        for seg in segments:
+            if seg.speaker:
+                speaker_counts[seg.speaker] = speaker_counts.get(seg.speaker, 0) + 1
+
+        if not speaker_counts:
+            return "Информация о спикерах недоступна (транскрипция без диаризации)"
+
+        total = len(speaker_counts)
+        lines = [f"Обнаружено спикеров: {total}"]
+
+        for speaker, count in sorted(speaker_counts.items()):
+            lines.append(f"- Спикер {speaker}: {count} реплик")
+
         return "\n".join(lines)
 
     def save_to_file(
