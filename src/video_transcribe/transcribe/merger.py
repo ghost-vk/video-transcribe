@@ -38,11 +38,13 @@ def merge_results(
     all_segments: list[TranscriptionSegment] = []
     for result, offset in zip(results, chunk_offsets):
         for segment in result.segments:
-            # Adjust timestamps
+            # Adjust timestamps (handle None values)
+            adjusted_start = segment.start + offset if segment.start is not None else None
+            adjusted_end = segment.end + offset if segment.end is not None else None
             adjusted_segment = TranscriptionSegment(
                 speaker=segment.speaker,
-                start=segment.start + offset,
-                end=segment.end + offset,
+                start=adjusted_start,
+                end=adjusted_end,
                 text=segment.text,
             )
             all_segments.append(adjusted_segment)
@@ -58,7 +60,8 @@ def merge_results(
     combined_text = " ".join(seg.text for seg in all_segments)
 
     # Calculate total duration
-    total_duration = chunk_offsets[-1] + results[-1].duration
+    last_duration = results[-1].duration if results[-1].duration is not None else 0.0
+    total_duration = chunk_offsets[-1] + last_duration
 
     # Use model from first result
     model_used = results[0].model_used

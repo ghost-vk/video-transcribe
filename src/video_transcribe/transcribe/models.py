@@ -21,8 +21,8 @@ ResponseFormat = Literal[
 class TranscriptionSegment:
     """Single segment of transcribed text with speaker info."""
     speaker: str | None
-    start: float
-    end: float
+    start: float | None
+    end: float | None
     text: str
 
 
@@ -30,7 +30,7 @@ class TranscriptionSegment:
 class TranscriptionResult:
     """Complete transcription result."""
     text: str
-    duration: float
+    duration: float | None
     segments: list[TranscriptionSegment]
     model_used: TranscriptionModel
     response_format: ResponseFormat

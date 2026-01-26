@@ -185,17 +185,17 @@ class OpenAIAdapter:
             for seg in response.segments:
                 segments.append(TranscriptionSegment(
                     speaker=None,
-                    start=seg.start,
-                    end=seg.end,
+                    start=getattr(seg, 'start', None),
+                    end=getattr(seg, 'end', None),
                     text=seg.text,
                 ))
 
         elif response_format == "diarized_json":
             for seg in response.segments:
                 segments.append(TranscriptionSegment(
-                    speaker=seg.speaker,
-                    start=seg.start,
-                    end=seg.end,
+                    speaker=getattr(seg, 'speaker', None),
+                    start=getattr(seg, 'start', None),
+                    end=getattr(seg, 'end', None),
                     text=seg.text,
                 ))
 
@@ -203,7 +203,7 @@ class OpenAIAdapter:
             text=response.text if hasattr(response, 'text') else
                    ''.join(s.text for s in segments),
             duration=response.duration if hasattr(response, 'duration') else
-                      (segments[-1].end if segments else 0.0),
+                      ((segments[-1].end if segments[-1].end is not None else 0.0) if segments else 0.0),
             segments=segments,
             model_used=model,
             response_format=response_format,
