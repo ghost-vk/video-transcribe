@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from video_transcribe.audio import video_to_audio
-from video_transcribe.transcribe import OpenAIAdapter
+from video_transcribe.transcribe import create_speech_to_text
 from video_transcribe.transcribe.models import (
     TranscriptionModel,
     ResponseFormat,
@@ -104,8 +104,8 @@ def process_video(
     audio_path_result = video_to_audio(video_path, audio_path)
 
     # 4. Transcribe audio with automatic chunking
-    adapter = OpenAIAdapter()
-    transcript = adapter.transcribe_chunked(
+    client = create_speech_to_text()
+    transcript = client.transcribe_chunked(
         audio_path=audio_path_result,
         model=model,
         prompt=prompt,

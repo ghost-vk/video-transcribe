@@ -5,7 +5,7 @@ import click
 from pathlib import Path
 
 from video_transcribe.audio import video_to_audio
-from video_transcribe.transcribe import OpenAIAdapter
+from video_transcribe.transcribe import create_speech_to_text
 from video_transcribe.pipeline import process_video
 from video_transcribe.postprocess import list_presets
 
@@ -77,7 +77,7 @@ def transcribe(
         video-transcribe transcribe meeting.mp3 -l ru -o transcript.txt
     """
     try:
-        adapter = OpenAIAdapter()
+        client = create_speech_to_text()
 
         file_size_mb = Path(audio_path).stat().st_size / (1024 * 1024)
         if file_size_mb > 20:
@@ -90,7 +90,7 @@ def transcribe(
             if total > 1:
                 click.echo(f"  Processing chunk {current}/{total}...", err=True)
 
-        result = adapter.transcribe_chunked(
+        result = client.transcribe_chunked(
             audio_path=audio_path,
             model=model,  # type: ignore
             prompt=prompt,

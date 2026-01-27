@@ -18,6 +18,18 @@ DEFAULT_TRANSCRIPTION_TEMPERATURE: float = 0  # Deterministic
 OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
 OPENAI_BASE_URL: str | None = os.getenv("OPENAI_BASE_URL")  # Optional, uses default if None
 
+# Speech-to-text settings (provider-agnostic)
+SPEECH_TO_TEXT_PROVIDER: str = os.getenv("SPEECH_TO_TEXT_PROVIDER", "zai")  # openai | zai
+SPEECH_TO_TEXT_API_KEY: str = (
+    os.getenv("SPEECH_TO_TEXT_API_KEY", "")
+    or os.getenv("OPENAI_API_KEY", "")
+    or os.getenv("ZAI_API_KEY", "")
+)
+SPEECH_TO_TEXT_BASE_URL: str = os.getenv(
+    "SPEECH_TO_TEXT_BASE_URL", "https://api.z.ai/api/paas/v4"
+)
+SPEECH_TO_TEXT_MODEL: str = os.getenv("SPEECH_TO_TEXT_MODEL", "glm-asr-2512")
+
 # API limits
 OPENAI_MAX_FILE_SIZE_MB: int = 25
 OPENAI_SUPPORTED_AUDIO_FORMATS = {".mp3", ".mp4", ".mpeg", ".mpga", ".m4a", ".wav", ".webm"}
