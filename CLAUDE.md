@@ -44,8 +44,9 @@ Merge → [Post-processing] → Markdown output
 **Audio Format:** MP3, 16kHz mono — optimized for OpenAI API ingestion (defined in `config.py`)
 
 **Chunking Strategy:**
-- Files >20MB automatically split into chunks
-- 2-second overlap between chunks for context preservation
+- **OpenAI:** Size-based chunking (>20MB) with 2s overlap
+- **Z.AI:** Duration-based chunking (>30s) with 2s overlap
+- Overlap is WITHIN the limit, not added on top (e.g., Z.AI: [0-30s], [28-58s], [56-86s]...)
 - Speaker renumbering across chunks (A,B → A,B,C,D for new speakers in each chunk)
 - Supports >26 speakers (A-Z, then AA, AB, AC...)
 - Uses `tempfile.gettempdir()` for cross-platform compatibility
@@ -53,7 +54,7 @@ Merge → [Post-processing] → Markdown output
 **ASR Services:**
 - Primary: OpenAI `gpt-4o-transcribe` (with prompt support, 25MB limit)
 - Diarization: OpenAI `gpt-4o-transcribe-diarize` (speaker labels, no prompt)
-- Alternative (planned): ZAI GLM-ASR-2512 (cheaper, no diarization, 30-sec chunks)
+- Alternative: ZAI GLM-ASR-2512 (cheaper, no diarization, 30s duration limit, implemented)
 
 **Post-processing:**
 - OpenAI-compatible LLM client (configurable provider)
@@ -66,25 +67,32 @@ Merge → [Post-processing] → Markdown output
 ## Configuration
 
 Environment variables (`.env`):
-- `OPENAI_API_KEY` — Whisper transcription
-- `OPENAI_BASE_URL` — Optional, for OpenAI-compatible transcription API
+- `SPEECH_TO_TEXT_PROVIDER` — Provider: "openai" or "zai" (default: "zai")
+- `SPEECH_TO_TEXT_API_KEY` — API key for speech-to-text (defaults to OPENAI_API_KEY or ZAI_API_KEY)
+- `SPEECH_TO_TEXT_BASE_URL` — Base URL for speech-to-text API
+- `SPEECH_TO_TEXT_MODEL` — Model name (default: glm-asr-2512)
+- `OPENAI_API_KEY` — OpenAI API key (legacy, use SPEECH_TO_TEXT_API_KEY)
 - `POSTPROCESS_API_KEY` — Post-processing LLM (defaults to OPENAI_API_KEY)
 - `POSTPROCESS_BASE_URL` — Optional, for OpenAI-compatible post-processing API
 - `POSTPROCESS_MODEL` — Model name (default: gpt-5-mini)
 - `POSTPROCESS_TEMPERATURE` — Sampling temperature (default: 0.3)
-- `ZAI_API_KEY` — Alternative ASR
 - `CHUNK_MAX_SIZE_MB` — Max chunk size in MB (default: 20)
+- `CHUNK_MAX_DURATION_SEC` — Max chunk duration in seconds (default: 30.0)
 - `CHUNK_OVERLAP_SEC` — Overlap between chunks in seconds (default: 2.0)
 
 ## Current Status (Phase 3: MVP)
 
 **Implemented:**
 - Video to audio conversion (`audio/converter.py`)
-- Audio chunking (`audio/chunker.py`) — split large files with overlap
-- Transcription adapter with OpenAI (`transcribe/adapter.py`)
-  - `transcribe_chunked()` — automatic chunking for files >20MB
-  - `gpt-4o-transcribe` — supports prompt for context
-  - `gpt-4o-transcribe-diarize` — speaker diarization
+- Audio chunking (`audio/chunker.py`)
+  - `split_audio()` — size-based chunking for OpenAI (>20MB)
+  - `split_audio_by_duration()` — duration-based chunking for Z.AI (>30s)
+- Transcription adapter with provider factory (`transcribe/factory.py`)
+  - `create_speech_to_text()` — creates OpenAI or Z.AI client based on config
+  - OpenAI adapter (`transcribe/adapter.py`)
+  - Z.AI GLM-ASR client (`transcribe/glm_asr_client.py`)
+    - `transcribe_chunked()` — automatic duration-based chunking
+    - Russian language prompt to prevent Chinese translation
 - Result merger (`transcribe/merger.py`) — combine chunks with speaker renumbering
 - Post-processing module (`postprocess/`)
   - OpenAI-compatible LLM client (configurable provider/model)
@@ -95,7 +103,6 @@ Environment variables (`.env`):
 - `.env` support via `python-dotenv`
 
 **Pending:**
-- ZAI alternative implementation
 - Tests
 
 ## System Dependencies

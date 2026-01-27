@@ -57,10 +57,15 @@ Output format: MP3, 16 kHz, mono (optimized for OpenAI API).
 ```
 
 **Available models:**
-- `gpt-4o-transcribe` — supports prompt parameter for context
-- `gpt-4o-transcribe-diarize` — speaker diarization (no prompt support)
+- `gpt-4o-transcribe` — OpenAI (supports prompt for context)
+- `gpt-4o-transcribe-diarize` — OpenAI (speaker diarization, no prompt)
+- `glm-asr-2512` — Z.AI (default, cheaper, no diarization)
 
-**Large file support:** Files exceeding 20MB are automatically split into chunks with overlap, processed sequentially, and merged with adjusted timestamps. Speaker labels are renumbered across chunks (A,B → A,B,C,D).
+**Large file support:** Files are automatically split into chunks with overlap:
+- **OpenAI:** Size-based chunking (>20MB) with 2s overlap
+- **Z.AI:** Duration-based chunking (>30s) with 2s overlap
+
+Chunks are processed sequentially with progress indication, then merged with adjusted timestamps. Speaker labels are renumbered across chunks (A,B → A,B,C,D).
 
 ### Process video to text (one step)
 
@@ -115,25 +120,38 @@ Copy `.env.example` to `.env` and add your API keys:
 cp .env.example .env
 ```
 
-### Required API keys
+### Speech-to-text provider selection
 
-- `OPENAI_API_KEY` — for Whisper transcription
-- `POSTPROCESS_API_KEY` — for LLM post-processing (optional, defaults to OPENAI_API_KEY)
+The tool supports multiple speech-to-text providers via `SPEECH_TO_TEXT_PROVIDER`:
+
+| Provider | Model | Limits | Diarization | Price |
+|----------|-------|--------|-------------|-------|
+| **Z.AI** (default) | glm-asr-2512 | 30s duration, 25MB | ❌ No | ~$0.0024/min |
+| **OpenAI** | gpt-4o-transcribe | 25MB file | ❌ No | Standard rate |
+| **OpenAI** | gpt-4o-transcribe-diarize | 25MB file | ✅ Yes | Premium rate |
+
+**Configuration:**
+```bash
+SPEECH_TO_TEXT_PROVIDER=zai  # or "openai"
+SPEECH_TO_TEXT_API_KEY=your_api_key_here
+SPEECH_TO_TEXT_BASE_URL=https://api.z.ai/api/paas/v4  # optional
+SPEECH_TO_TEXT_MODEL=glm-asr-2512  # optional
+```
 
 ### Optional settings
 
-**Transcription:**
-- `OPENAI_BASE_URL` — use OpenAI-compatible API for transcription
+**Chunking (for fine-tuning large file handling):**
+- `CHUNK_MAX_SIZE_MB=20` — Max chunk size for OpenAI (default: 20)
+- `CHUNK_MAX_DURATION_SEC=30` — Max chunk duration for Z.AI (default: 30)
+- `CHUNK_OVERLAP_SEC=2.0` — Overlap between chunks in seconds (default: 2.0)
 
 **Post-processing:**
-- `POSTPROCESS_BASE_URL` — use OpenAI-compatible API for post-processing
-- `POSTPROCESS_MODEL` — model name (default: gpt-5-mini)
+- `POSTPROCESS_API_KEY` — LLM API key (defaults to SPEECH_TO_TEXT_API_KEY)
+- `POSTPROCESS_BASE_URL` — OpenAI-compatible API for post-processing
+- `POSTPROCESS_MODEL` — Model name (default: gpt-5-mini)
   - Examples: gpt-5-mini, gpt-4o-mini, gpt-4o, glm-4.7, llama-3.1-70b
-- `POSTPROCESS_TEMPERATURE` — sampling temperature (default: 0.3)
+- `POSTPROCESS_TEMPERATURE` — Sampling temperature (default: 0.3)
 
-**Alternative transcription:**
-- `ZAI_API_KEY` — for ZAI GLM-ASR transcription
-
-Optional chunking settings (for fine-tuning large file handling):
-- `CHUNK_MAX_SIZE_MB=20` — Safe margin from 25MB API limit (default: 20)
-- `CHUNK_OVERLAP_SEC=2.0` — Overlap between chunks in seconds (default: 2.0)
+**Legacy (deprecated, use SPEECH_TO_TEXT_* above):**
+- `OPENAI_API_KEY` — for OpenAI transcription
+- `ZAI_API_KEY` — for ZAI transcription
