@@ -37,6 +37,7 @@ OPENAI_SUPPORTED_AUDIO_FORMATS = {".mp3", ".mp4", ".mpeg", ".mpga", ".m4a", ".wa
 # Chunking settings
 CHUNK_MAX_SIZE_MB: int = int(os.getenv("CHUNK_MAX_SIZE_MB", "20"))
 CHUNK_OVERLAP_SEC: float = float(os.getenv("CHUNK_OVERLAP_SEC", "2.0"))
+CHUNK_MAX_DURATION_SEC: float = float(os.getenv("CHUNK_MAX_DURATION_SEC", "30.0"))
 
 # Post-processing settings
 POSTPROCESS_API_KEY: str = os.getenv("POSTPROCESS_API_KEY", "") or os.getenv("OPENAI_API_KEY", "")
@@ -64,6 +65,13 @@ def validate_config() -> None:
         )
     if CHUNK_OVERLAP_SEC < 0:
         raise ValueError(f"CHUNK_OVERLAP_SEC must be non-negative, got {CHUNK_OVERLAP_SEC}")
+    if CHUNK_MAX_DURATION_SEC <= 0:
+        raise ValueError(f"CHUNK_MAX_DURATION_SEC must be positive, got {CHUNK_MAX_DURATION_SEC}")
+    if CHUNK_OVERLAP_SEC >= CHUNK_MAX_DURATION_SEC:
+        raise ValueError(
+            f"CHUNK_OVERLAP_SEC ({CHUNK_OVERLAP_SEC}) must be less than "
+            f"CHUNK_MAX_DURATION_SEC ({CHUNK_MAX_DURATION_SEC})"
+        )
 
     # Post-process API key warning (not error - post-processing is optional)
     if not POSTPROCESS_API_KEY:

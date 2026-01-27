@@ -158,12 +158,12 @@ class GLMASRClient:
         response_format: ResponseFormat = "json",
         language: str | None = None,  # noqa: ARG002  (not supported by Z.AI)
         temperature: float = 0,  # noqa: ARG002  (not supported by Z.AI)
-        progress_callback: Callable[[int, int], None] | None = None,  # noqa: ARG002
+        progress_callback: Callable[[int, int], None] | None = None,
     ) -> TranscriptionResult:
-        """Transcribe audio file (compatibility wrapper for OpenAIAdapter interface).
+        """Transcribe audio file with automatic duration-based chunking.
 
-        Note: Z.AI doesn't support chunking in this MVP. This method calls transcribe()
-        directly. Chunking will be implemented in a future version.
+        Z.AI has a 30-second duration limit, so files longer than that
+        are automatically split into chunks using pydub.
 
         Args:
             audio_path: Path to audio file.
@@ -173,20 +173,91 @@ class GLMASRClient:
             response_format: Output format.
             language: Language code (ignored, Z.AI auto-detects).
             temperature: Sampling temperature (ignored, not supported by Z.AI).
-            progress_callback: Progress callback (ignored, no chunking).
+            progress_callback: Optional callback(current, total) for progress updates.
 
         Returns:
-            TranscriptionResult with transcribed text.
+            TranscriptionResult with transcribed text and corrected timestamps.
         """
+        from video_transcribe.audio import split_audio_by_duration, cleanup_chunks
+        from video_transcribe.transcribe.merger import merge_results
+        from pydub import AudioSegment
+
         # Use default prompt if None to prevent Chinese translation
         if prompt is None:
             prompt = DEFAULT_PROMPT
 
-        return self.transcribe(
-            audio_path=audio_path,
-            prompt=prompt,
-            response_format=response_format,
-        )
+        # Get audio duration to check if chunking is needed
+        audio_file = Path(audio_path)
+        if not audio_file.exists():
+            raise AudioFileNotFoundError(f"Audio file not found: {audio_path}")
+
+        # Load audio to get duration using pydub
+        try:
+            audio = AudioSegment.from_file(audio_path)
+            duration_sec = len(audio) / 1000.0
+        except Exception as e:
+            raise TranscriptionError(f"Failed to load audio: {e}") from e
+
+        # Check if chunking is needed (Z.AI 30s limit)
+        if duration_sec <= self.MAX_DURATION:
+            # No chunking needed - transcribe directly
+            result = self.transcribe(
+                audio_path=audio_path,
+                prompt=prompt,
+                response_format=response_format,
+            )
+            # Fix duration using actual audio duration
+            result.duration = duration_sec
+            # Fix segment end time
+            if result.segments and result.segments[0].end is None:
+                result.segments[0].end = duration_sec
+            return result
+
+        # Chunking required - use duration-based chunking
+        try:
+            chunks = split_audio_by_duration(
+                audio_path=audio_path,
+                max_duration_sec=self.MAX_DURATION,
+            )
+        except Exception as e:
+            raise TranscriptionError(f"Failed to split audio by duration: {e}") from e
+
+        try:
+            # Process chunks sequentially
+            results: list[TranscriptionResult] = []
+            chunk_offsets: list[float] = []
+
+            for i, chunk in enumerate(chunks):
+                if progress_callback:
+                    progress_callback(i + 1, len(chunks))
+
+                result = self.transcribe(
+                    audio_path=chunk.path,
+                    prompt=prompt,
+                    response_format=response_format,
+                )
+
+                # Fix duration using actual chunk duration from AudioChunk
+                chunk_duration = chunk.end_sec - chunk.start_sec
+                result.duration = chunk_duration
+                if result.segments and result.segments[0].end is None:
+                    result.segments[0].end = chunk_duration
+
+                results.append(result)
+                chunk_offsets.append(chunk.start_sec)
+
+            # Merge results (no diarization for Z.AI)
+            merged = merge_results(
+                results=results,
+                chunk_offsets=chunk_offsets,
+                has_diarization=False,
+            )
+
+            return merged
+
+        finally:
+            # Always cleanup chunks
+            cleanup_chunks(chunks)
 
     def _parse_response(self, response: dict) -> TranscriptionResult:
         """Parse Z.AI API response into TranscriptionResult.

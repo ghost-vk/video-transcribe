@@ -10,6 +10,7 @@ from pydub import AudioSegment
 from video_transcribe.config import (
     CHUNK_MAX_SIZE_MB,
     CHUNK_OVERLAP_SEC,
+    CHUNK_MAX_DURATION_SEC,
 )
 
 
@@ -120,6 +121,125 @@ def split_audio(
             end_sec=end_ms / 1000.0,
             original_duration_sec=duration_sec,
         ))
+
+    return chunk_results
+
+
+def split_audio_by_duration(
+    audio_path: str,
+    max_duration_sec: float = CHUNK_MAX_DURATION_SEC,
+    overlap_sec: float = CHUNK_OVERLAP_SEC,
+    scratchpad_dir: str | None = None,
+) -> list[AudioChunk]:
+    """Split audio file into chunks based on duration limit.
+
+    This is useful for APIs with duration-based limits (e.g., Z.AI 30s limit).
+    Uses pydub for accurate audio splitting by time.
+
+    Args:
+        audio_path: Path to audio file to split.
+        max_duration_sec: Maximum duration per chunk in seconds.
+            Default from CHUNK_MAX_DURATION_SEC (30.0 for Z.AI).
+        overlap_sec: Overlap between chunks in seconds.
+            Default from CHUNK_OVERLAP_SEC (2.0).
+        scratchpad_dir: Directory for temporary chunk files.
+            If None, uses system temp directory.
+
+    Returns:
+        List of AudioChunk objects ordered by index with accurate
+        start_sec/end_sec metadata.
+
+    Raises:
+        FileNotFoundError: If audio file doesn't exist.
+        RuntimeError: If audio splitting fails.
+    """
+    audio_file = Path(audio_path)
+
+    if not audio_file.exists():
+        raise FileNotFoundError(f"Audio file not found: {audio_path}")
+
+    # Get audio duration using ffprobe
+    duration = _get_audio_duration(audio_path)
+
+    # Check if chunking is needed
+    if duration <= max_duration_sec:
+        # No chunking needed - return single chunk with is_temp=False
+        return [AudioChunk(
+            path=str(audio_file),
+            index=0,
+            start_sec=0.0,
+            end_sec=duration,
+            original_duration_sec=duration,
+            is_temp=False,  # Original file, should NOT be deleted
+        )]
+
+    # Load audio for splitting using pydub
+    try:
+        audio = AudioSegment.from_file(audio_path)
+    except Exception as e:
+        raise RuntimeError(f"Failed to load audio file: {e}") from e
+
+    duration_ms = len(audio)
+    duration_sec = duration_ms / 1000.0
+
+    # Calculate chunk boundaries based on duration
+    # Note: overlap is included WITHIN the duration limit, not added on top
+    # For 30s limit with 2s overlap: chunks are [0-30s], [28-58s], [56-86s], etc.
+    chunk_duration_ms = int(max_duration_sec * 1000)
+    overlap_ms = int(overlap_sec * 1000)
+
+    if chunk_duration_ms <= 0:
+        raise RuntimeError(
+            f"Max duration ({max_duration_sec}s) must be positive"
+        )
+    if overlap_ms >= chunk_duration_ms:
+        raise RuntimeError(
+            f"Overlap ({overlap_sec}s) must be less than max duration ({max_duration_sec}s)"
+        )
+
+    # Use system temp dir if not specified
+    if scratchpad_dir is None:
+        scratchpad = Path(tempfile.gettempdir()) / "video-transcribe-chunks"
+    else:
+        scratchpad = Path(scratchpad_dir)
+    scratchpad.mkdir(parents=True, exist_ok=True)
+
+    # Export chunks to files
+    chunk_results: list[AudioChunk] = []
+    start_ms = 0
+    index = 0
+
+    while start_ms < duration_ms:
+        # End of chunk (respecting max_duration limit, NOT including overlap)
+        end_ms = min(start_ms + chunk_duration_ms, duration_ms)
+
+        chunk_path = scratchpad / f"{audio_file.stem}_chunk_{index:03d}{audio_file.suffix}"
+        chunk_audio = audio[start_ms:end_ms]
+
+        try:
+            chunk_audio.export(str(chunk_path), format="mp3")
+        except Exception as e:
+            # Cleanup on failure
+            for existing in chunk_results:
+                Path(existing.path).unlink(missing_ok=True)
+            raise RuntimeError(f"Failed to export chunk {index}: {e}") from e
+
+        chunk_results.append(AudioChunk(
+            path=str(chunk_path),
+            index=index,
+            start_sec=start_ms / 1000.0,
+            end_sec=end_ms / 1000.0,
+            original_duration_sec=duration_sec,
+        ))
+
+        # Move start forward (accounting for overlap)
+        # Next chunk starts before current chunk ends to preserve context
+        start_ms = start_ms + chunk_duration_ms - overlap_ms
+        index += 1
+
+        # Avoid tiny final chunks or infinite loop
+        if start_ms >= duration_ms or duration_ms - start_ms < chunk_duration_ms // 2:
+            break
 
     return chunk_results
 
