@@ -31,6 +31,8 @@
 - [x] Модуль нарезки аудио
 - [x] Адаптер транскрибации
 - [x] Реализация OpenAI (gpt-4o-transcribe, gpt-4o-transcribe-diarize)
+- [x] Реализация ZAI (glm-asr-2512)
+- [x] Реализация NeMo (nvidia/parakeet-tdt-0.6b-v3, local)
 - [x] Pipeline модуль (process команда)
 - [x] Модуль postprocess (GLM 4.7 / gpt-5-mini)
   - [x] it_meeting_summary preset

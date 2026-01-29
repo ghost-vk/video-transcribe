@@ -55,6 +55,7 @@ Merge → [Post-processing] → Markdown output
 - Primary: OpenAI `gpt-4o-transcribe` (with prompt support, 25MB limit)
 - Diarization: OpenAI `gpt-4o-transcribe-diarize` (speaker labels, no prompt)
 - Alternative: ZAI GLM-ASR-2512 (cheaper, no diarization, 30s duration limit, implemented)
+- Local: NVIDIA NeMo Parakeet TDT 0.6B V3 (offline, diarization support)
 
 **Post-processing:**
 - OpenAI-compatible LLM client (configurable provider)
@@ -67,7 +68,7 @@ Merge → [Post-processing] → Markdown output
 ## Configuration
 
 Environment variables (`.env`):
-- `SPEECH_TO_TEXT_PROVIDER` — Provider: "openai" or "zai" (default: "zai")
+- `SPEECH_TO_TEXT_PROVIDER` — Provider: "openai", "zai", or "nemo" (default: "zai")
 - `SPEECH_TO_TEXT_API_KEY` — API key for speech-to-text (defaults to OPENAI_API_KEY or ZAI_API_KEY)
 - `SPEECH_TO_TEXT_BASE_URL` — Base URL for speech-to-text API
 - `SPEECH_TO_TEXT_MODEL` — Model name (default: glm-asr-2512)
@@ -79,6 +80,8 @@ Environment variables (`.env`):
 - `CHUNK_MAX_SIZE_MB` — Max chunk size in MB (default: 20)
 - `CHUNK_MAX_DURATION_SEC` — Max chunk duration in seconds (default: 30.0)
 - `CHUNK_OVERLAP_SEC` — Overlap between chunks in seconds (default: 2.0)
+- `NEMO_MODEL_NAME` — NeMo model name (default: nvidia/parakeet-tdt-0.6b-v3)
+- `NEMO_DEVICE` — Device for NeMo: "cpu" or "cuda" (default: "cpu")
 
 ## Current Status (Phase 3: MVP)
 
@@ -88,11 +91,12 @@ Environment variables (`.env`):
   - `split_audio()` — size-based chunking for OpenAI (>20MB)
   - `split_audio_by_duration()` — duration-based chunking for Z.AI (>30s)
 - Transcription adapter with provider factory (`transcribe/factory.py`)
-  - `create_speech_to_text()` — creates OpenAI or Z.AI client based on config
+  - `create_speech_to_text()` — creates OpenAI, Z.AI, or NeMo client based on config
   - OpenAI adapter (`transcribe/adapter.py`)
   - Z.AI GLM-ASR client (`transcribe/glm_asr_client.py`)
     - `transcribe_chunked()` — automatic duration-based chunking
     - Russian language prompt to prevent Chinese translation
+  - NeMo adapter (`transcribe/nemo_client.py`) — local ASR with diarization
 - Result merger (`transcribe/merger.py`) — combine chunks with speaker renumbering
 - Post-processing module (`postprocess/`)
   - OpenAI-compatible LLM client (configurable provider/model)

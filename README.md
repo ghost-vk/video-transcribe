@@ -129,10 +129,11 @@ The tool supports multiple speech-to-text providers via `SPEECH_TO_TEXT_PROVIDER
 | **Z.AI** (default) | glm-asr-2512 | 30s duration, 25MB | ❌ No | ~$0.0024/min |
 | **OpenAI** | gpt-4o-transcribe | 25MB file | ❌ No | Standard rate |
 | **OpenAI** | gpt-4o-transcribe-diarize | 25MB file | ✅ Yes | Premium rate |
+| **NeMo** (local) | nvidia/parakeet-tdt-0.6b-v3 | None (local) | ✅ Yes | Free (offline) |
 
 **Configuration:**
 ```bash
-SPEECH_TO_TEXT_PROVIDER=zai  # or "openai"
+SPEECH_TO_TEXT_PROVIDER=zai  # or "openai" or "nemo"
 SPEECH_TO_TEXT_API_KEY=your_api_key_here
 SPEECH_TO_TEXT_BASE_URL=https://api.z.ai/api/paas/v4  # optional
 SPEECH_TO_TEXT_MODEL=glm-asr-2512  # optional
