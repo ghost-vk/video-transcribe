@@ -7,6 +7,7 @@ from typing import Literal
 TranscriptionModel = Literal[
     "gpt-4o-transcribe",
     "gpt-4o-transcribe-diarize",
+    "nvidia/parakeet-tdt-0.6b-v3",
 ]
 
 ResponseFormat = Literal[

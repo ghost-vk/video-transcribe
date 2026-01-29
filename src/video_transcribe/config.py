@@ -49,6 +49,10 @@ DEFAULT_POSTPROCESS_TEMPERATURE: float = float(os.getenv("POSTPROCESS_TEMPERATUR
 GLM_API_KEY: str = POSTPROCESS_API_KEY
 GLM_BASE_URL: str | None = POSTPROCESS_BASE_URL
 
+# NeMo settings (local speech recognition)
+NEMO_MODEL_NAME: str = os.getenv("NEMO_MODEL_NAME", "nvidia/parakeet-tdt-0.6b-v3")
+NEMO_DEVICE: str = os.getenv("NEMO_DEVICE", "cpu")  # cuda or cpu
+
 
 def validate_config() -> None:
     """Validate configuration values.

@@ -2,6 +2,7 @@
 
 from video_transcribe.transcribe.adapter import OpenAIAdapter
 from video_transcribe.transcribe.glm_asr_client import GLMASRClient
+from video_transcribe.transcribe.nemo_client import NeMoClient
 from video_transcribe.transcribe.factory import create_speech_to_text, SpeechToTextClient
 from video_transcribe.transcribe.models import (
     TranscriptionModel,
@@ -24,6 +25,7 @@ __all__ = [
     # Adapters
     "OpenAIAdapter",
     "GLMASRClient",
+    "NeMoClient",
     # Factory
     "create_speech_to_text",
     "SpeechToTextClient",

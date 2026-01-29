@@ -7,19 +7,22 @@ from video_transcribe.config import (
     SPEECH_TO_TEXT_PROVIDER,
     SPEECH_TO_TEXT_API_KEY,
     SPEECH_TO_TEXT_BASE_URL,
+    NEMO_MODEL_NAME,
+    NEMO_DEVICE,
 )
 
 from video_transcribe.transcribe.glm_asr_client import GLMASRClient
 from video_transcribe.transcribe.adapter import OpenAIAdapter
+from video_transcribe.transcribe.nemo_client import NeMoClient
 
-SpeechToTextClient = Union[OpenAIAdapter, GLMASRClient]
+SpeechToTextClient = Union[OpenAIAdapter, GLMASRClient, NeMoClient]
 
 
 def create_speech_to_text() -> SpeechToTextClient:
     """Create speech-to-text client based on SPEECH_TO_TEXT_PROVIDER.
 
     Returns:
-        OpenAIAdapter or GLMASRClient instance.
+        OpenAIAdapter, GLMASRClient, or NeMoClient instance.
 
     Raises:
         ValueError: If SPEECH_TO_TEXT_PROVIDER is invalid.
@@ -35,8 +38,14 @@ def create_speech_to_text() -> SpeechToTextClient:
             api_key=SPEECH_TO_TEXT_API_KEY,
             base_url=SPEECH_TO_TEXT_BASE_URL,
         )
+    elif provider == "nemo":
+        # NVIDIA NeMo local ASR
+        return NeMoClient(
+            model_name=NEMO_MODEL_NAME,
+            device=NEMO_DEVICE,
+        )
     else:
         raise ValueError(
             f"Invalid SPEECH_TO_TEXT_PROVIDER: {provider}. "
-            f"Supported providers: openai, zai"
+            f"Supported providers: openai, zai, nemo"
         )
