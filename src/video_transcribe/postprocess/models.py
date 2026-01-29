@@ -13,12 +13,14 @@ class PostprocessResult:
         model_used: Model name that generated the output.
         input_tokens: Input tokens used (if available from API).
         output_tokens: Output tokens used (if available from API).
+        suggested_filename: AI-suggested filename (if smart filename enabled).
     """
     preset_name: str
     raw_output: str
     model_used: str
     input_tokens: int | None
     output_tokens: int | None
+    suggested_filename: str | None = None
     _output_path: str | None = field(default=None, repr=False)
 
     @property

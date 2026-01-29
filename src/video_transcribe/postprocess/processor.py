@@ -9,6 +9,7 @@ from video_transcribe.postprocess.prompts import get_preset, PromptPreset
 from video_transcribe.postprocess.models import PostprocessResult
 from video_transcribe.transcribe.models import TranscriptionResult, TranscriptionSegment
 from video_transcribe.postprocess.exceptions import PromptTemplateError
+from video_transcribe.postprocess import filename
 
 
 class TextProcessor:
@@ -26,15 +27,17 @@ class TextProcessor:
         self,
         transcript: TranscriptionResult,
         preset: PromptPreset = PromptPreset.IT_MEETING_SUMMARY,
+        smart_filename: bool = False,
     ) -> PostprocessResult:
         """Transform transcript using preset.
 
         Args:
             transcript: Transcription result to transform.
             preset: Prompt preset to use.
+            smart_filename: If True, extract AI-suggested filename from response.
 
         Returns:
-            PostprocessResult with generated text.
+            PostprocessResult with generated text and optional suggested filename.
 
         Raises:
             PromptTemplateError: If template formatting fails.
@@ -59,13 +62,26 @@ class TextProcessor:
         input_tokens = None
         output_tokens = None
 
-        # 5. Return result
+        # 5. Extract suggested filename (if enabled)
+        suggested_filename = None
+        if smart_filename:
+            suggested_filename = filename.extract_filename_from_response(raw_output)
+            if suggested_filename:
+                # Validate but don't fail if invalid
+                if not filename.validate_filename(suggested_filename):
+                    suggested_filename = None
+                else:
+                    # Remove the FILENAME comment from output
+                    raw_output = filename.strip_filename_marker(raw_output)
+
+        # 6. Return result
         return PostprocessResult(
             preset_name=preset.value,
             raw_output=raw_output,
             model_used=self.client.model,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
+            suggested_filename=suggested_filename,
         )
 
     def _format_prompt(

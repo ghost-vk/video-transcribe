@@ -17,6 +17,7 @@ from video_transcribe.transcribe.models import (
 from video_transcribe.postprocess import TextProcessor, save_postprocess_result, PromptPreset
 from video_transcribe.postprocess.models import PostprocessResult
 from video_transcribe.postprocess.exceptions import PostprocessError
+from video_transcribe.postprocess.filename import generate_safe_filename
 
 # Video file extensions to recognize
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
@@ -57,6 +58,7 @@ def process_video(
     progress_callback: Callable[[int, int], None] | None = None,
     postprocess: bool = False,
     postprocess_preset: str = "it_meeting_summary",
+    smart_filename: bool = False,
 ) -> ProcessResult:
     """Process video file to text transcript.
 
@@ -75,6 +77,7 @@ def process_video(
         progress_callback: Optional callback(current, total) for progress updates.
         postprocess: Enable LLM post-processing (default: False).
         postprocess_preset: Preset name - "it_meeting_summary" or "screencast_cleanup".
+        smart_filename: Enable AI-suggested filenames for post-processing output.
 
     Returns:
         ProcessResult with video path, audio path (None if deleted),
@@ -153,11 +156,23 @@ def process_video(
         try:
             processor = TextProcessor()
             preset = PromptPreset(postprocess_preset)
-            postprocess_result = processor.process(transcript, preset)
+            postprocess_result = processor.process(transcript, preset, smart_filename=smart_filename)
 
-            # Save to separate markdown file
-            postprocess_path = save_postprocess_result(output_path, preset)
-            processor.save_to_file(postprocess_result, postprocess_path)
+            # Determine output path for post-processed file
+            if smart_filename and postprocess_result.suggested_filename:
+                # Use AI-suggested filename
+                output_dir = Path(output_path).parent
+                default_prefix = Path(video_path).stem
+                postprocess_path = generate_safe_filename(
+                    postprocess_result.suggested_filename,
+                    output_dir,
+                    default_prefix,
+                )
+            else:
+                # Use default naming scheme
+                postprocess_path = save_postprocess_result(output_path, preset)
+
+            processor.save_to_file(postprocess_result, str(postprocess_path))
 
         except PostprocessError as e:
             # Do NOT interrupt pipeline - transcript is already saved

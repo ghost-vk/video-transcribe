@@ -201,6 +201,11 @@ def transcribe(
     default="it_meeting_summary",
     help="Preset for post-processing.",
 )
+@click.option(
+    "--smart-filename",
+    is_flag=True,
+    help="Enable AI-suggested filenames for post-processing output.",
+)
 def process(
     video_path: str,
     output: str | None,
@@ -212,6 +217,7 @@ def process(
     keep_audio: bool,
     postprocess: bool,
     postprocess_preset: str,
+    smart_filename: bool,
 ) -> None:
     """Transcribe video file directly to text.
 
@@ -224,6 +230,7 @@ def process(
         video-transcribe process meeting.mp4 --keep-audio
         video-transcribe process meeting.mp4 -l ru
         video-transcribe process tutorial.mp4 --postprocess --preset screencast_cleanup
+        video-transcribe process meeting.mp4 --postprocess --smart-filename
     """
     try:
         click.echo(f"Processing {video_path}...")
@@ -248,13 +255,14 @@ def process(
             progress_callback=progress_callback,
             postprocess=postprocess,
             postprocess_preset=postprocess_preset,
+            smart_filename=smart_filename,
         )
 
-        click.echo(f"Transcription saved: {result.output_path}")
+        click.echo(f"Transcription saved: {Path(result.output_path).resolve()}")
         if result.audio_path:
-            click.echo(f"Audio saved: {result.audio_path}")
+            click.echo(f"Audio saved: {Path(result.audio_path).resolve()}")
         if result.postprocess:
-            click.echo(f"Post-process saved: {result.postprocess.output_path}", err=True)
+            click.echo(f"Post-process saved: {Path(result.postprocess.output_path).resolve()}", err=True)
 
         click.echo(f"---", err=True)
         click.echo(f"Model: {result.transcript.model_used}", err=True)

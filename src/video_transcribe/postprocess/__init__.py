@@ -21,7 +21,9 @@ from video_transcribe.postprocess.exceptions import (
     PostprocessError,
     GLMClientError,
     PromptTemplateError,
+    FilenameError,
 )
+from video_transcribe.postprocess import filename
 
 __all__ = [
     "LLMClient",
@@ -34,4 +36,10 @@ __all__ = [
     "PostprocessError",
     "GLMClientError",
     "PromptTemplateError",
+    "FilenameError",
+    "extract_filename_from_response",
+    "strip_filename_marker",
+    "sanitize_filename",
+    "validate_filename",
+    "generate_safe_filename",
 ]

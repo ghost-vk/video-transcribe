@@ -13,3 +13,8 @@ class GLMClientError(PostprocessError):
 class PromptTemplateError(PostprocessError):
     """Error in prompt template formatting."""
     pass
+
+
+class FilenameError(PostprocessError):
+    """Error in filename generation or validation."""
+    pass
