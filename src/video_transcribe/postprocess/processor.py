@@ -206,12 +206,15 @@ class TextProcessor:
 def save_postprocess_result(
     transcript_path: str,
     preset: PromptPreset,
+    output_dir: Path | None = None,
 ) -> str:
     """Generate output path for post-process result.
 
     Args:
         transcript_path: Original transcript file path.
         preset: Preset that was used.
+        output_dir: Custom output directory for markdown file. If None, uses
+                   transcript file's directory (default behavior).
 
     Returns:
         Output path for post-process result.
@@ -221,8 +224,19 @@ def save_postprocess_result(
         "meeting.mp4.summary.md"
         >>> save_postprocess_result("tutorial.mp4.txt", PromptPreset.SCREENCAST_CLEANUP)
         "tutorial.mp4.screencast.md"
+        >>> # With custom output directory:
+        >>> save_postprocess_result("meeting.mp4.txt", PromptPreset.IT_MEETING_SUMMARY, Path("./summaries"))
+        "./summaries/meeting.mp4.summary.md"
     """
     path = Path(transcript_path)
+
+    # Determine output directory
+    if output_dir is None:
+        # Default: use transcript file's directory
+        final_output_dir = path.parent
+    else:
+        # Use custom output directory
+        final_output_dir = output_dir
 
     # Determine suffix based on preset
     if preset == PromptPreset.IT_MEETING_SUMMARY:
@@ -234,5 +248,9 @@ def save_postprocess_result(
 
     # Remove .txt if present, add new suffix
     if path.suffix == ".txt":
-        return str(path.with_suffix(suffix))
-    return str(path.with_suffix(path.suffix + suffix))
+        filename = path.with_suffix(suffix).name
+    else:
+        filename = path.with_suffix(path.suffix + suffix).name
+
+    # Return full path in output directory
+    return str(final_output_dir / filename)

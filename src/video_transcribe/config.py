@@ -45,6 +45,9 @@ POSTPROCESS_BASE_URL: str | None = os.getenv("POSTPROCESS_BASE_URL")  # Optional
 DEFAULT_POSTPROCESS_MODEL: str = os.getenv("POSTPROCESS_MODEL", "gpt-5-mini")
 DEFAULT_POSTPROCESS_TEMPERATURE: float = float(os.getenv("POSTPROCESS_TEMPERATURE", "0.3"))
 
+# Post-processing output directory (optional)
+OUTPUT_DIR: str | None = os.getenv("OUTPUT_DIR")  # None = use video file's directory
+
 # Legacy aliases (for backward compatibility)
 GLM_API_KEY: str = POSTPROCESS_API_KEY
 GLM_BASE_URL: str | None = POSTPROCESS_BASE_URL

@@ -62,6 +62,7 @@ Merge → [Post-processing] → Markdown output
 - Default: gpt-5-mini via OpenAI API
 - Can use any OpenAI-compatible provider (GLM-4.7, etc.)
 - Two presets: `it_meeting_summary` and `screencast_cleanup`
+- Markdown files can be saved to separate directory via `OUTPUT_DIR` or `--postprocess-dir`
 
 **CLI Framework:** Click (chosen over Typer/rich-cli)
 
@@ -73,6 +74,7 @@ Environment variables (`.env`):
 - `SPEECH_TO_TEXT_BASE_URL` — Base URL for speech-to-text API
 - `SPEECH_TO_TEXT_MODEL` — Model name (default: glm-asr-2512)
 - `OPENAI_API_KEY` — OpenAI API key (legacy, use SPEECH_TO_TEXT_API_KEY)
+- `OUTPUT_DIR` — Directory for post-processing markdown files (default: None = video dir)
 - `POSTPROCESS_API_KEY` — Post-processing LLM (defaults to OPENAI_API_KEY)
 - `POSTPROCESS_BASE_URL` — Optional, for OpenAI-compatible post-processing API
 - `POSTPROCESS_MODEL` — Model name (default: gpt-5-mini)

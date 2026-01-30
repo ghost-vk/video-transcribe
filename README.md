@@ -92,7 +92,7 @@ Chunks are processed sequentially with progress indication, then merged with adj
 ### Post-processing with LLM
 
 ```bash
-# IT meeting summary
+# IT meeting summary (files saved next to video)
 .venv/bin/video-transcribe process meeting.mp4 --postprocess
 # Creates: meeting.mp4.txt + meeting.mp4.summary.md
 
@@ -100,12 +100,21 @@ Chunks are processed sequentially with progress indication, then merged with adj
 .venv/bin/video-transcribe process tutorial.mp4 --postprocess --preset screencast_cleanup
 # Creates: tutorial.mp4.txt + tutorial.mp4.screencast.md
 
+# Save markdown files to separate directory
+.venv/bin/video-transcribe process meeting.mp4 --postprocess --postprocess-dir ./summaries
+# Creates: meeting.mp4.txt (next to video) + summaries/meeting.mp4.summary.md
+
+# With OUTPUT_DIR environment variable
+OUTPUT_DIR=./docs .venv/bin/video-transcribe process meeting.mp4 --postprocess
+# Creates: meeting.mp4.txt (next to video) + docs/meeting.mp4.summary.md
+
 # Full example with all options
 .venv/bin/video-transcribe process standup.mp4 \
   -m gpt-4o-transcribe-diarize \
   -l ru \
   --postprocess \
-  --preset it_meeting_summary
+  --preset it_meeting_summary \
+  --postprocess-dir ./summaries
 ```
 
 **Available presets:**
@@ -147,6 +156,7 @@ SPEECH_TO_TEXT_MODEL=glm-asr-2512  # optional
 - `CHUNK_OVERLAP_SEC=2.0` — Overlap between chunks in seconds (default: 2.0)
 
 **Post-processing:**
+- `OUTPUT_DIR` — Directory for markdown files (default: same as video)
 - `POSTPROCESS_API_KEY` — LLM API key (defaults to SPEECH_TO_TEXT_API_KEY)
 - `POSTPROCESS_BASE_URL` — OpenAI-compatible API for post-processing
 - `POSTPROCESS_MODEL` — Model name (default: gpt-5-mini)

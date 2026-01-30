@@ -206,6 +206,11 @@ def transcribe(
     is_flag=True,
     help="Enable AI-suggested filenames for post-processing output.",
 )
+@click.option(
+    "--postprocess-dir",
+    type=click.Path(),
+    help="Directory for post-processing markdown files. Overrides OUTPUT_DIR env.",
+)
 def process(
     video_path: str,
     output: str | None,
@@ -218,6 +223,7 @@ def process(
     postprocess: bool,
     postprocess_preset: str,
     smart_filename: bool,
+    postprocess_dir: str | None,
 ) -> None:
     """Transcribe video file directly to text.
 
@@ -231,6 +237,7 @@ def process(
         video-transcribe process meeting.mp4 -l ru
         video-transcribe process tutorial.mp4 --postprocess --preset screencast_cleanup
         video-transcribe process meeting.mp4 --postprocess --smart-filename
+        video-transcribe process meeting.mp4 --postprocess --postprocess-dir ./summaries
     """
     try:
         click.echo(f"Processing {video_path}...")
@@ -256,6 +263,7 @@ def process(
             postprocess=postprocess,
             postprocess_preset=postprocess_preset,
             smart_filename=smart_filename,
+            postprocess_dir=postprocess_dir,
         )
 
         click.echo(f"Transcription saved: {Path(result.output_path).resolve()}")

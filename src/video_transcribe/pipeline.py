@@ -18,6 +18,7 @@ from video_transcribe.postprocess import TextProcessor, save_postprocess_result,
 from video_transcribe.postprocess.models import PostprocessResult
 from video_transcribe.postprocess.exceptions import PostprocessError
 from video_transcribe.postprocess.filename import generate_safe_filename
+from video_transcribe.config import OUTPUT_DIR
 
 # Video file extensions to recognize
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
@@ -59,6 +60,7 @@ def process_video(
     postprocess: bool = False,
     postprocess_preset: str = "it_meeting_summary",
     smart_filename: bool = False,
+    postprocess_dir: str | None = None,
 ) -> ProcessResult:
     """Process video file to text transcript.
 
@@ -78,6 +80,8 @@ def process_video(
         postprocess: Enable LLM post-processing (default: False).
         postprocess_preset: Preset name - "it_meeting_summary" or "screencast_cleanup".
         smart_filename: Enable AI-suggested filenames for post-processing output.
+        postprocess_dir: Directory for post-processing markdown files (default: None).
+                        Priority: 1) this param, 2) OUTPUT_DIR env var, 3) video dir.
 
     Returns:
         ProcessResult with video path, audio path (None if deleted),
@@ -159,18 +163,33 @@ def process_video(
             postprocess_result = processor.process(transcript, preset, smart_filename=smart_filename)
 
             # Determine output path for post-processed file
+            # Priority: 1) postprocess_dir param, 2) OUTPUT_DIR env var, 3) video file's directory
+            markdown_output_dir: Path
+            if postprocess_dir is not None:
+                # CLI option takes highest priority
+                markdown_output_dir = Path(postprocess_dir)
+            elif OUTPUT_DIR is not None:
+                # Environment variable takes second priority
+                markdown_output_dir = Path(OUTPUT_DIR)
+            else:
+                # Default: use video file's directory (current behavior)
+                markdown_output_dir = Path(video_path).parent
+
             if smart_filename and postprocess_result.suggested_filename:
                 # Use AI-suggested filename
-                output_dir = Path(output_path).parent
                 default_prefix = Path(video_path).stem
                 postprocess_path = generate_safe_filename(
                     postprocess_result.suggested_filename,
-                    output_dir,
+                    markdown_output_dir,
                     default_prefix,
                 )
             else:
-                # Use default naming scheme
-                postprocess_path = save_postprocess_result(output_path, preset)
+                # Use default naming scheme with custom output directory
+                postprocess_path = save_postprocess_result(
+                    output_path,  # transcript path for naming
+                    preset,
+                    output_dir=markdown_output_dir,
+                )
 
             processor.save_to_file(postprocess_result, str(postprocess_path))
 
