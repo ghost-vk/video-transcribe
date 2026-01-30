@@ -115,11 +115,19 @@ OUTPUT_DIR=./docs .venv/bin/video-transcribe process meeting.mp4 --postprocess
   --postprocess \
   --preset it_meeting_summary \
   --postprocess-dir ./summaries
+
+# AI-suggested filenames (enabled by default)
+.venv/bin/video-transcribe process meeting.mp4 --postprocess
+# LLM may suggest: "Сводка встречи по Тест звука.md" instead of "meeting.mp4.summary.md"
+# Use --no-smart-filename to disable
 ```
 
 **Available presets:**
 - `it_meeting_summary` — structured meeting summary with action items
 - `screencast_cleanup` — convert screencast to structured tutorial
+
+**AI-suggested filenames:**
+When `--postprocess` is enabled, the LLM can suggest descriptive filenames (e.g., "Инструкция по удалению тикета.md" instead of "video.mp4.summary.md"). This is **enabled by default** — use `--no-smart-filename` to use standard naming.
 
 ## Configuration
 

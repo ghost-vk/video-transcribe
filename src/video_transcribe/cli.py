@@ -202,9 +202,9 @@ def transcribe(
     help="Preset for post-processing.",
 )
 @click.option(
-    "--smart-filename",
-    is_flag=True,
-    help="Enable AI-suggested filenames for post-processing output.",
+    "--smart-filename/--no-smart-filename",
+    default=True,
+    help="Enable AI-suggested filenames for post-processing output (default: enabled).",
 )
 @click.option(
     "--postprocess-dir",
