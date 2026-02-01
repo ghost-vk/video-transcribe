@@ -26,7 +26,7 @@ class TextProcessor:
     def process(
         self,
         transcript: TranscriptionResult,
-        preset: PromptPreset = PromptPreset.IT_MEETING_SUMMARY,
+        preset: PromptPreset = PromptPreset.MEETING,
         smart_filename: bool = False,
     ) -> PostprocessResult:
         """Transform transcript using preset.
@@ -220,12 +220,12 @@ def save_postprocess_result(
         Output path for post-process result.
 
     Examples:
-        >>> save_postprocess_result("meeting.mp4.txt", PromptPreset.IT_MEETING_SUMMARY)
+        >>> save_postprocess_result("meeting.mp4.txt", PromptPreset.MEETING)
         "meeting.mp4.summary.md"
-        >>> save_postprocess_result("tutorial.mp4.txt", PromptPreset.SCREENCAST_CLEANUP)
+        >>> save_postprocess_result("tutorial.mp4.txt", PromptPreset.SCREENCAST)
         "tutorial.mp4.screencast.md"
         >>> # With custom output directory:
-        >>> save_postprocess_result("meeting.mp4.txt", PromptPreset.IT_MEETING_SUMMARY, Path("./summaries"))
+        >>> save_postprocess_result("meeting.mp4.txt", PromptPreset.MEETING, Path("./summaries"))
         "./summaries/meeting.mp4.summary.md"
     """
     path = Path(transcript_path)
@@ -239,9 +239,9 @@ def save_postprocess_result(
         final_output_dir = output_dir
 
     # Determine suffix based on preset
-    if preset == PromptPreset.IT_MEETING_SUMMARY:
+    if preset == PromptPreset.MEETING:
         suffix = ".summary.md"
-    elif preset == PromptPreset.SCREENCAST_CLEANUP:
+    elif preset == PromptPreset.SCREENCAST:
         suffix = ".screencast.md"
     else:
         suffix = ".processed.md"

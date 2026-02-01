@@ -198,7 +198,7 @@ def transcribe(
     "-P",
     "postprocess_preset",
     type=click.Choice(list_presets(), case_sensitive=False),
-    default="it_meeting_summary",
+    default="meeting",
     help="Preset for post-processing.",
 )
 @click.option(
@@ -235,7 +235,7 @@ def process(
         video-transcribe process meeting.mp4 -m gpt-4o-transcribe-diarize
         video-transcribe process meeting.mp4 --keep-audio
         video-transcribe process meeting.mp4 -l ru
-        video-transcribe process tutorial.mp4 --postprocess --preset screencast_cleanup
+        video-transcribe process tutorial.mp4 --postprocess --preset screencast
         video-transcribe process meeting.mp4 --postprocess --smart-filename
         video-transcribe process meeting.mp4 --postprocess --postprocess-dir ./summaries
     """

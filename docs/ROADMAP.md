@@ -35,8 +35,8 @@
 - [x] Реализация NeMo (nvidia/parakeet-tdt-0.6b-v3, local)
 - [x] Pipeline модуль (process команда)
 - [x] Модуль postprocess (GLM 4.7 / gpt-5-mini)
-  - [x] it_meeting_summary preset
-  - [x] screencast_cleanup preset
+  - [x] meeting preset
+  - [x] screencast preset
 - [x] CLI-интерфейс
 - [ ] Базовые тесты
 

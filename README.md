@@ -99,7 +99,7 @@ Chunks are processed sequentially with progress indication, then merged with adj
 # Creates: meeting.mp4.txt + meeting.mp4.summary.md
 
 # Screencast cleanup (tutorial format)
-.venv/bin/video-transcribe process tutorial.mp4 --postprocess --preset screencast_cleanup
+.venv/bin/video-transcribe process tutorial.mp4 --postprocess --preset screencast
 # Creates: tutorial.mp4.txt + tutorial.mp4.screencast.md
 
 # Save markdown files to separate directory
@@ -115,7 +115,7 @@ OUTPUT_DIR=./docs .venv/bin/video-transcribe process meeting.mp4 --postprocess
   -m gpt-4o-transcribe-diarize \
   -l ru \
   --postprocess \
-  --preset it_meeting_summary \
+  --preset meeting \
   --postprocess-dir ./summaries
 
 # AI-suggested filenames (enabled by default)
@@ -126,8 +126,8 @@ OUTPUT_DIR=./docs .venv/bin/video-transcribe process meeting.mp4 --postprocess
 
 **Available presets:**
 
-- `it_meeting_summary` — structured meeting summary with action items
-- `screencast_cleanup` — convert screencast to structured tutorial
+- `meeting` — structured meeting summary with action items
+- `screencast` — convert screencast to structured tutorial
 
 **AI-suggested filenames:**
 When `--postprocess` is enabled, the LLM can suggest descriptive filenames (e.g., "Инструкция по удалению тикета.md" instead of "video.mp4.summary.md"). This is **enabled by default** — use `--no-smart-filename` to use standard naming.

@@ -61,7 +61,7 @@ Merge → [Post-processing] → Markdown output
 - OpenAI-compatible LLM client (configurable provider)
 - Default: gpt-5-mini via OpenAI API
 - Can use any OpenAI-compatible provider (GLM-4.7, etc.)
-- Two presets: `it_meeting_summary` and `screencast_cleanup`
+- Two presets: `meeting` and `screencast`
 - Markdown files can be saved to separate directory via `OUTPUT_DIR` or `--postprocess-dir`
 
 **CLI Framework:** Click (chosen over Typer/rich-cli)
@@ -102,8 +102,8 @@ Environment variables (`.env`):
 - Result merger (`transcribe/merger.py`) — combine chunks with speaker renumbering
 - Post-processing module (`postprocess/`)
   - OpenAI-compatible LLM client (configurable provider/model)
-  - `it_meeting_summary` preset — structured meeting summaries
-  - `screencast_cleanup` preset — screencast → tutorial conversion
+  - `meeting` preset — structured meeting summaries
+  - `screencast` preset — screencast → tutorial conversion
 - Pipeline orchestration (`pipeline.py`) — video → text → [postprocess]
 - CLI with `convert`, `transcribe`, and `process` commands
 - `.env` support via `python-dotenv`

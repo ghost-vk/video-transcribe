@@ -6,8 +6,8 @@ from enum import Enum
 
 class PromptPreset(str, Enum):
     """Available prompt presets."""
-    IT_MEETING_SUMMARY = "it_meeting_summary"
-    SCREENCAST_CLEANUP = "screencast_cleanup"
+    MEETING = "meeting"
+    SCREENCAST = "screencast"
 
 
 @dataclass
@@ -23,7 +23,7 @@ class PromptTemplate:
 
 
 PRESETS: dict[PromptPreset, PromptTemplate] = {
-    PromptPreset.IT_MEETING_SUMMARY: PromptTemplate(
+    PromptPreset.MEETING: PromptTemplate(
         system="""Ты - профессиональный ассистент для создания сводок IT встреч.
 
 Твоя задача:
@@ -105,7 +105,7 @@ PRESETS: dict[PromptPreset, PromptTemplate] = {
 Где вместо [тема] укажи основную тему встречи в 2-3 слова."""
     ),
 
-    PromptPreset.SCREENCAST_CLEANUP: PromptTemplate(
+    PromptPreset.SCREENCAST: PromptTemplate(
         system="""Ты - ассистент для преобразования скринкастов в структурированные текстовые туториалы.
 
 Твоя задача:
