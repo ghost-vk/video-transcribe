@@ -93,33 +93,37 @@ Chunks are processed sequentially with progress indication, then merged with adj
 
 ### Post-processing with LLM
 
+Post-processing is **enabled by default**. Use `--no-postprocess` to disable.
+
 ```bash
 # IT meeting summary (files saved next to video)
-.venv/bin/video-transcribe process meeting.mp4 --postprocess
+.venv/bin/video-transcribe process meeting.mp4
 # Creates: meeting.mp4.txt + meeting.mp4.summary.md
 
 # Screencast cleanup (tutorial format)
-.venv/bin/video-transcribe process tutorial.mp4 --postprocess --preset screencast
+.venv/bin/video-transcribe process tutorial.mp4 --preset screencast
 # Creates: tutorial.mp4.txt + tutorial.mp4.screencast.md
 
 # Save markdown files to separate directory
-.venv/bin/video-transcribe process meeting.mp4 --postprocess --postprocess-dir ./summaries
+.venv/bin/video-transcribe process meeting.mp4 --postprocess-dir ./summaries
 # Creates: meeting.mp4.txt (next to video) + summaries/meeting.mp4.summary.md
 
 # With OUTPUT_DIR environment variable
-OUTPUT_DIR=./docs .venv/bin/video-transcribe process meeting.mp4 --postprocess
+OUTPUT_DIR=./docs .venv/bin/video-transcribe process meeting.mp4
 # Creates: meeting.mp4.txt (next to video) + docs/meeting.mp4.summary.md
 
 # Full example with all options
 .venv/bin/video-transcribe process standup.mp4 \
   -m gpt-4o-transcribe-diarize \
   -l ru \
-  --postprocess \
   --preset meeting \
   --postprocess-dir ./summaries
 
+# Disable post-processing
+.venv/bin/video-transcribe process meeting.mp4 --no-postprocess
+
 # AI-suggested filenames (enabled by default)
-.venv/bin/video-transcribe process meeting.mp4 --postprocess
+.venv/bin/video-transcribe process meeting.mp4
 # LLM may suggest: "Сводка встречи по Тест звука.md" instead of "meeting.mp4.summary.md"
 # Use --no-smart-filename to disable
 ```
@@ -155,7 +159,7 @@ system: |
 EOF
 
 # Use custom prompt
-.venv/bin/video-transcribe process interview.mp4 --postprocess --prompt-file prompts/interview.md
+.venv/bin/video-transcribe process interview.mp4 --prompt-file prompts/interview.md
 ```
 
 **File format:**
@@ -174,7 +178,7 @@ EOF
 | `{date}`               | Current date (YYYY-MM-DD)             |
 
 **AI-suggested filenames:**
-When `--postprocess` is enabled, the LLM can suggest descriptive filenames (e.g., "Инструкция по удалению тикета.md" instead of "video.mp4.summary.md"). This is **enabled by default** — use `--no-smart-filename` to use standard naming.
+The LLM can suggest descriptive filenames (e.g., "Инструкция по удалению тикета.md" instead of "video.mp4.summary.md"). This is **enabled by default** — use `--no-smart-filename` to use standard naming.
 
 ## Configuration
 
