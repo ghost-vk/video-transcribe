@@ -57,11 +57,13 @@ Output format: MP3, 16 kHz, mono (optimized for OpenAI API).
 ```
 
 **Available models:**
+
 - `gpt-4o-transcribe` — OpenAI (supports prompt for context)
 - `gpt-4o-transcribe-diarize` — OpenAI (speaker diarization, no prompt)
 - `glm-asr-2512` — Z.AI (default, cheaper, no diarization)
 
 **Large file support:** Files are automatically split into chunks with overlap:
+
 - **OpenAI:** Size-based chunking (>20MB) with 2s overlap
 - **Z.AI:** Duration-based chunking (>30s) with 2s overlap
 
@@ -123,6 +125,7 @@ OUTPUT_DIR=./docs .venv/bin/video-transcribe process meeting.mp4 --postprocess
 ```
 
 **Available presets:**
+
 - `it_meeting_summary` — structured meeting summary with action items
 - `screencast_cleanup` — convert screencast to structured tutorial
 
@@ -141,14 +144,15 @@ cp .env.example .env
 
 The tool supports multiple speech-to-text providers via `SPEECH_TO_TEXT_PROVIDER`:
 
-| Provider | Model | Limits | Diarization | Price |
-|----------|-------|--------|-------------|-------|
-| **Z.AI** (default) | glm-asr-2512 | 30s duration, 25MB | ❌ No | ~$0.0024/min |
-| **OpenAI** | gpt-4o-transcribe | 25MB file | ❌ No | Standard rate |
-| **OpenAI** | gpt-4o-transcribe-diarize | 25MB file | ✅ Yes | Premium rate |
-| **NeMo** (local) | nvidia/parakeet-tdt-0.6b-v3 | None (local) | ✅ Yes | Free (offline) |
+| Provider           | Model                       | Limits             | Diarization | Price          |
+| ------------------ | --------------------------- | ------------------ | ----------- | -------------- |
+| **Z.AI** (default) | glm-asr-2512                | 30s duration, 25MB | ❌ No       | ~$0.0024/min   |
+| **OpenAI**         | gpt-4o-transcribe           | 25MB file          | ❌ No       | Standard rate  |
+| **OpenAI**         | gpt-4o-transcribe-diarize   | 25MB file          | ✅ Yes      | Premium rate   |
+| **NeMo** (local)   | nvidia/parakeet-tdt-0.6b-v3 | None (local)       | ✅ Yes      | Free (offline) |
 
 **Configuration:**
+
 ```bash
 SPEECH_TO_TEXT_PROVIDER=zai  # or "openai" or "nemo"
 SPEECH_TO_TEXT_API_KEY=your_api_key_here
@@ -159,11 +163,13 @@ SPEECH_TO_TEXT_MODEL=glm-asr-2512  # optional
 ### Optional settings
 
 **Chunking (for fine-tuning large file handling):**
+
 - `CHUNK_MAX_SIZE_MB=20` — Max chunk size for OpenAI (default: 20)
 - `CHUNK_MAX_DURATION_SEC=30` — Max chunk duration for Z.AI (default: 30)
 - `CHUNK_OVERLAP_SEC=2.0` — Overlap between chunks in seconds (default: 2.0)
 
 **Post-processing:**
+
 - `OUTPUT_DIR` — Directory for markdown files (default: same as video)
 - `POSTPROCESS_API_KEY` — LLM API key (defaults to SPEECH_TO_TEXT_API_KEY)
 - `POSTPROCESS_BASE_URL` — OpenAI-compatible API for post-processing
@@ -171,6 +177,7 @@ SPEECH_TO_TEXT_MODEL=glm-asr-2512  # optional
   - Examples: gpt-5-mini, gpt-4o-mini, gpt-4o, glm-4.7, llama-3.1-70b
 - `POSTPROCESS_TEMPERATURE` — Sampling temperature (default: 0.3)
 
-**Legacy (deprecated, use SPEECH_TO_TEXT_* above):**
+**Legacy (deprecated, use SPEECH*TO_TEXT*\* above):**
+
 - `OPENAI_API_KEY` — for OpenAI transcription
 - `ZAI_API_KEY` — for ZAI transcription
