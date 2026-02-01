@@ -1,7 +1,10 @@
 """Built-in prompt presets for post-processing."""
 
+from pathlib import Path
 from dataclasses import dataclass
 from enum import Enum
+
+from video_transcribe.postprocess.exceptions import PromptTemplateError
 
 
 class PromptPreset(str, Enum):
@@ -96,13 +99,7 @@ PRESETS: dict[PromptPreset, PromptTemplate] = {
 Определи участников на основе транскрипта.
 ВАЖНО: Количество участников НЕ должно превышать количество обнаруженных спикеров.
 
-Извлеки максимум пользы из текста. Не выдумывай информацию, которой нет в транскрипте.
-
-**ВАЖНО:** В самом конце ответа добавь HTML-комментарий с предложенным именем файла:
-```
-<!-- FILENAME: Сводка встречи по [тема].md -->
-```
-Где вместо [тема] укажи основную тему встречи в 2-3 слова."""
+Извлеки максимум пользы из текста. Не выдумывай информацию, которой нет в транскрипте."""
     ),
 
     PromptPreset.SCREENCAST: PromptTemplate(
@@ -154,13 +151,7 @@ PRESETS: dict[PromptPreset, PromptTemplate] = {
 {{2-3 предложения с ключевыми выводами — что зритель должен был вынести из видео}}
 ```
 
-Текст должен быть чистым, структурированным и готовым к чтению.
-
-**ВАЖНО:** В самом конце ответа добавь HTML-комментарий с предложенным именем файла:
-```
-<!-- FILENAME: [Понятное название туториала].md -->
-```
-Где вместо [Понятное название туториала] укажи краткое и понятное название темы видео."""
+Текст должен быть чистым, структурированным и готовым к чтению."""
     ),
 }
 
@@ -187,3 +178,60 @@ def list_presets() -> list[str]:
         List of preset name strings.
     """
     return [p.value for p in PromptPreset]
+
+
+def load_prompt_file(path: str) -> PromptTemplate:
+    """Load custom prompt from markdown file with YAML frontmatter.
+
+    Args:
+        path: Path to custom prompt file.
+
+    Returns:
+        PromptTemplate with system and user prompts.
+
+    Raises:
+        PromptTemplateError: If file format is invalid or {transcript} is missing.
+
+    File format:
+        ---
+        system: |
+          System prompt here
+        ---
+
+        User prompt with {transcript} placeholder
+    """
+    content = Path(path).read_text(encoding="utf-8")
+
+    # Parse frontmatter
+    if not content.startswith("---"):
+        raise PromptTemplateError(
+            "❌ Prompt file must start with --- frontmatter\n"
+            "   Format:\n"
+            "   ---\n"
+            "   system: |\n"
+            "     Your system prompt\n"
+            "   ---\n"
+            "   Your user prompt with {transcript}"
+        )
+
+    parts = content.split("---", 2)
+    if len(parts) < 3:
+        raise PromptTemplateError(
+            "❌ Invalid frontmatter format\n"
+            "   File must contain exactly two --- delimiters"
+        )
+
+    import yaml
+    frontmatter = yaml.safe_load(parts[1]) or {}
+    user = parts[2].strip()
+
+    system = frontmatter.get("system", "")
+
+    # Validate required placeholders
+    if "{transcript}" not in user:
+        raise PromptTemplateError(
+            "❌ Missing required placeholder: {transcript}\n"
+            "   Add {transcript} to your prompt file."
+        )
+
+    return PromptTemplate(system=system, user=user)

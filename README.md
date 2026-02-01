@@ -129,6 +129,50 @@ OUTPUT_DIR=./docs .venv/bin/video-transcribe process meeting.mp4 --postprocess
 - `meeting` — structured meeting summary with action items
 - `screencast` — convert screencast to structured tutorial
 
+### Custom prompts
+
+You can create custom prompts for specific use cases:
+
+```bash
+# Create custom prompt file
+mkdir -p prompts
+cat > prompts/interview.md << 'EOF'
+---
+system: |
+  Ты - ассистент для анализа собеседований на позицию разработчика.
+  Оцени кандидата по техническим навыкам и soft skills.
+---
+
+Проанализируй кандидата на основе собеседования:
+
+**Транскрипт:**
+{transcript}
+
+**Оцени:**
+1. Технические навыки
+2. Коммуникативные навыки
+3. Рекомендация
+EOF
+
+# Use custom prompt
+.venv/bin/video-transcribe process interview.mp4 --postprocess --prompt-file prompts/interview.md
+```
+
+**File format:**
+
+- YAML frontmatter with optional `system` key
+- Markdown body with `{transcript}` placeholder (required)
+
+**Available placeholders:**
+
+| Placeholder            | Description                           |
+| ---------------------- | ------------------------------------- |
+| `{transcript}`         | Full transcription text (required)    |
+| `{segments}`           | Segments with timestamps and speakers |
+| `{speakers_info}`      | Speaker statistics                    |
+| `{duration_formatted}` | Duration in HH:MM:SS format           |
+| `{date}`               | Current date (YYYY-MM-DD)             |
+
 **AI-suggested filenames:**
 When `--postprocess` is enabled, the LLM can suggest descriptive filenames (e.g., "Инструкция по удалению тикета.md" instead of "video.mp4.summary.md"). This is **enabled by default** — use `--no-smart-filename` to use standard naming.
 

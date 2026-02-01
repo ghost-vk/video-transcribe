@@ -15,6 +15,7 @@ from video_transcribe.transcribe.models import (
     TranscriptionResult,
 )
 from video_transcribe.postprocess import TextProcessor, save_postprocess_result, PromptPreset
+from video_transcribe.postprocess.prompts import load_prompt_file, PromptTemplate
 from video_transcribe.postprocess.models import PostprocessResult
 from video_transcribe.postprocess.exceptions import PostprocessError
 from video_transcribe.postprocess.filename import generate_safe_filename
@@ -61,6 +62,7 @@ def process_video(
     postprocess_preset: str = "meeting",
     smart_filename: bool = False,
     postprocess_dir: str | None = None,
+    prompt_file: str | None = None,
 ) -> ProcessResult:
     """Process video file to text transcript.
 
@@ -82,6 +84,8 @@ def process_video(
         smart_filename: Enable AI-suggested filenames for post-processing output.
         postprocess_dir: Directory for post-processing markdown files (default: None).
                         Priority: 1) this param, 2) OUTPUT_DIR env var, 3) video dir.
+        prompt_file: Path to custom prompt file (markdown with YAML frontmatter).
+                     Takes priority over postprocess_preset if specified.
 
     Returns:
         ProcessResult with video path, audio path (None if deleted),
@@ -159,8 +163,23 @@ def process_video(
     if postprocess:
         try:
             processor = TextProcessor()
-            preset = PromptPreset(postprocess_preset)
-            postprocess_result = processor.process(transcript, preset, smart_filename=smart_filename)
+
+            # Load template: custom prompt file or preset
+            custom_template: PromptTemplate | None = None
+            preset: PromptPreset | None = None
+
+            if prompt_file:
+                custom_template = load_prompt_file(prompt_file)
+                # preset remains None (not used with custom template)
+            else:
+                preset = PromptPreset(postprocess_preset)
+
+            postprocess_result = processor.process(
+                transcript,
+                preset,
+                smart_filename=smart_filename,
+                custom_template=custom_template,
+            )
 
             # Determine output path for post-processed file
             # Priority: 1) postprocess_dir param, 2) OUTPUT_DIR env var, 3) video file's directory
@@ -185,9 +204,11 @@ def process_video(
                 )
             else:
                 # Use default naming scheme with custom output directory
+                # For custom prompts, preset is None - use default for naming
+                preset_for_naming = preset or PromptPreset.MEETING
                 postprocess_path = save_postprocess_result(
                     output_path,  # transcript path for naming
-                    preset,
+                    preset_for_naming,
                     output_dir=markdown_output_dir,
                 )
 

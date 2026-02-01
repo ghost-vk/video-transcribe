@@ -5,11 +5,19 @@ from datetime import datetime
 from pathlib import Path
 
 from video_transcribe.postprocess.client import GLMClient
-from video_transcribe.postprocess.prompts import get_preset, PromptPreset
+from video_transcribe.postprocess.prompts import get_preset, PromptPreset, PromptTemplate
 from video_transcribe.postprocess.models import PostprocessResult
 from video_transcribe.transcribe.models import TranscriptionResult, TranscriptionSegment
 from video_transcribe.postprocess.exceptions import PromptTemplateError
 from video_transcribe.postprocess import filename
+
+
+class _SafeDict(dict):
+    """Dict that returns empty string for missing keys (optional placeholders)."""
+
+    def __missing__(self, key: str) -> str:
+        """Return empty string for missing placeholder keys."""
+        return ""
 
 
 class TextProcessor:
@@ -28,13 +36,15 @@ class TextProcessor:
         transcript: TranscriptionResult,
         preset: PromptPreset = PromptPreset.MEETING,
         smart_filename: bool = False,
+        custom_template: PromptTemplate | None = None,
     ) -> PostprocessResult:
-        """Transform transcript using preset.
+        """Transform transcript using preset or custom template.
 
         Args:
             transcript: Transcription result to transform.
-            preset: Prompt preset to use.
+            preset: Prompt preset to use (ignored if custom_template is provided).
             smart_filename: If True, extract AI-suggested filename from response.
+            custom_template: Optional custom prompt template. Takes priority over preset.
 
         Returns:
             PostprocessResult with generated text and optional suggested filename.
@@ -44,15 +54,28 @@ class TextProcessor:
             GLMClientError: If LLM call fails.
         """
         # 1. Get prompt template
-        template = get_preset(preset)
+        if custom_template:
+            template = custom_template
+        else:
+            template = get_preset(preset)
 
-        # 2. Format with transcript data
-        try:
-            user_prompt = self._format_prompt(template.user, transcript, preset)
-        except KeyError as e:
-            raise PromptTemplateError(f"Missing placeholder in template: {e}")
+        # 2. Auto-append smart filename marker if enabled
+        if smart_filename:
+            filename_marker = (
+                "\n\n**ВАЖНО:** В самом конце ответа добавь HTML-комментарий с предложенным именем файла:\n"
+                "```\n"
+                "<!-- FILENAME: [понятное название].md -->\n"
+                "```\n"
+            )
+            template = PromptTemplate(
+                system=template.system,
+                user=template.user + filename_marker,
+            )
 
-        # 3. Call LLM
+        # 3. Format with transcript data
+        user_prompt = self._format_prompt(template.user, transcript)
+
+        # 4. Call LLM
         raw_output = self.client.complete(
             prompt=user_prompt,
             system_prompt=template.system,
@@ -76,7 +99,7 @@ class TextProcessor:
 
         # 6. Return result
         return PostprocessResult(
-            preset_name=preset.value,
+            preset_name=preset.value if preset else "custom",
             raw_output=raw_output,
             model_used=self.client.model,
             input_tokens=input_tokens,
@@ -88,7 +111,6 @@ class TextProcessor:
         self,
         template: str,
         transcript: TranscriptionResult,
-        preset: PromptPreset,
     ) -> str:
         """Format template with transcript data.
 
@@ -105,29 +127,30 @@ class TextProcessor:
         Args:
             template: Prompt template with placeholders.
             transcript: Transcription result.
-            preset: Preset being used (for context).
 
         Returns:
             Formatted prompt string.
 
-        Raises:
-            KeyError: If placeholder is missing from transcript data.
+        Note:
+            Optional placeholders return empty string if not found in template.
+            {transcript} is required and will raise an error if missing.
         """
         duration_min = transcript.duration / 60 if transcript.duration else 0
 
         # Format duration as HH:MM:SS
         duration_formatted = self._format_duration(transcript.duration)
 
-        return template.format(
-            transcript=transcript.text,
-            segments=self._format_segments(transcript.segments),
-            speakers_info=self._extract_speakers_info(transcript.segments),
-            duration=transcript.duration,
-            duration_minutes=duration_min,
-            duration_formatted=duration_formatted,
-            model=transcript.model_used,
-            date=datetime.now().strftime("%Y-%m-%d"),
-        )
+        # Use SafeDict for optional placeholders (returns empty string if missing)
+        return template.format_map(_SafeDict({
+            "transcript": transcript.text,
+            "segments": self._format_segments(transcript.segments),
+            "speakers_info": self._extract_speakers_info(transcript.segments),
+            "duration": transcript.duration,
+            "duration_minutes": duration_min,
+            "duration_formatted": duration_formatted,
+            "model": transcript.model_used,
+            "date": datetime.now().strftime("%Y-%m-%d"),
+        }))
 
     def _format_duration(self, seconds: float | None) -> str:
         """Format duration as HH:MM:SS.

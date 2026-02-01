@@ -199,7 +199,7 @@ def transcribe(
     "postprocess_preset",
     type=click.Choice(list_presets(), case_sensitive=False),
     default="meeting",
-    help="Preset for post-processing.",
+    help="Preset for post-processing. Ignored if --prompt-file is specified.",
 )
 @click.option(
     "--smart-filename/--no-smart-filename",
@@ -210,6 +210,12 @@ def transcribe(
     "--postprocess-dir",
     type=click.Path(),
     help="Directory for post-processing markdown files. Overrides OUTPUT_DIR env.",
+)
+@click.option(
+    "--prompt-file",
+    type=click.Path(exists=True),
+    help="Path to custom prompt file (markdown with YAML frontmatter). "
+         "Takes priority over --preset if both are specified.",
 )
 def process(
     video_path: str,
@@ -224,6 +230,7 @@ def process(
     postprocess_preset: str,
     smart_filename: bool,
     postprocess_dir: str | None,
+    prompt_file: str | None,
 ) -> None:
     """Transcribe video file directly to text.
 
@@ -238,6 +245,7 @@ def process(
         video-transcribe process tutorial.mp4 --postprocess --preset screencast
         video-transcribe process meeting.mp4 --postprocess --smart-filename
         video-transcribe process meeting.mp4 --postprocess --postprocess-dir ./summaries
+        video-transcribe process meeting.mp4 --postprocess --prompt-file ./prompts/custom.md
     """
     try:
         click.echo(f"Processing {video_path}...")
@@ -264,6 +272,7 @@ def process(
             postprocess_preset=postprocess_preset,
             smart_filename=smart_filename,
             postprocess_dir=postprocess_dir,
+            prompt_file=prompt_file,
         )
 
         click.echo(f"Transcription saved: {Path(result.output_path).resolve()}")
