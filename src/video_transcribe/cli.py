@@ -189,9 +189,10 @@ def transcribe(
     help="Keep intermediate audio file for debugging. Saved next to video file.",
 )
 @click.option(
-    "--postprocess",
+    "--no-postprocess",
     is_flag=True,
-    help="Enable LLM post-processing (summary, cleanup, etc.).",
+    default=False,
+    help="Disable LLM post-processing (enabled by default).",
 )
 @click.option(
     "--preset",
@@ -226,7 +227,7 @@ def process(
     language: str | None,
     temperature: float,
     keep_audio: bool,
-    postprocess: bool,
+    no_postprocess: bool,
     postprocess_preset: str,
     smart_filename: bool,
     postprocess_dir: str | None,
@@ -235,6 +236,7 @@ def process(
     """Transcribe video file directly to text.
 
     This command combines video conversion and transcription in one step.
+    Post-processing is enabled by default.
 
     Examples:
         video-transcribe process meeting.mp4
@@ -242,10 +244,11 @@ def process(
         video-transcribe process meeting.mp4 -m gpt-4o-transcribe-diarize
         video-transcribe process meeting.mp4 --keep-audio
         video-transcribe process meeting.mp4 -l ru
-        video-transcribe process tutorial.mp4 --postprocess --preset screencast
-        video-transcribe process meeting.mp4 --postprocess --smart-filename
-        video-transcribe process meeting.mp4 --postprocess --postprocess-dir ./summaries
-        video-transcribe process meeting.mp4 --postprocess --prompt-file ./prompts/custom.md
+        video-transcribe process tutorial.mp4 --preset screencast
+        video-transcribe process meeting.mp4 --smart-filename
+        video-transcribe process meeting.mp4 --postprocess-dir ./summaries
+        video-transcribe process meeting.mp4 --prompt-file ./prompts/custom.md
+        video-transcribe process meeting.mp4 --no-postprocess  # disable post-processing
     """
     try:
         click.echo(f"Processing {video_path}...")
@@ -268,7 +271,7 @@ def process(
             temperature=temperature,
             keep_audio=keep_audio,
             progress_callback=progress_callback,
-            postprocess=postprocess,
+            postprocess=not no_postprocess,
             postprocess_preset=postprocess_preset,
             smart_filename=smart_filename,
             postprocess_dir=postprocess_dir,

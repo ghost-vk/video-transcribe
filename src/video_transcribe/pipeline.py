@@ -58,7 +58,7 @@ def process_video(
     temperature: float = 0,
     keep_audio: bool = False,
     progress_callback: Callable[[int, int], None] | None = None,
-    postprocess: bool = False,
+    postprocess: bool = True,
     postprocess_preset: str = "meeting",
     smart_filename: bool = False,
     postprocess_dir: str | None = None,
@@ -79,7 +79,7 @@ def process_video(
         keep_audio: If True, keep intermediate audio file next to video.
                    If False, use temp file and delete after transcription.
         progress_callback: Optional callback(current, total) for progress updates.
-        postprocess: Enable LLM post-processing (default: False).
+        postprocess: Enable LLM post-processing (default: True).
         postprocess_preset: Preset name - "meeting" or "screencast".
         smart_filename: Enable AI-suggested filenames for post-processing output.
         postprocess_dir: Directory for post-processing markdown files (default: None).
