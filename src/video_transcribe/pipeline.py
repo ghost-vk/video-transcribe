@@ -179,6 +179,7 @@ def process_video(
                 preset,
                 smart_filename=smart_filename,
                 custom_template=custom_template,
+                video_filename=Path(video_path).stem,
             )
 
             # Determine output path for post-processed file
@@ -217,8 +218,10 @@ def process_video(
         except PostprocessError as e:
             # Do NOT interrupt pipeline - transcript is already saved
             warnings.warn(f"Post-processing failed: {e}. Transcript saved successfully.")
+            postprocess_result = None
         except Exception as e:
             warnings.warn(f"Unexpected error in post-processing: {e}")
+            postprocess_result = None
 
     # 7. Cleanup temp audio if not keeping
     final_audio_path: str | None = audio_path_result

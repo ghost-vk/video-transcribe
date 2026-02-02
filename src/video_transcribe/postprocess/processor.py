@@ -37,6 +37,7 @@ class TextProcessor:
         preset: PromptPreset = PromptPreset.MEETING,
         smart_filename: bool = False,
         custom_template: PromptTemplate | None = None,
+        video_filename: str | None = None,
     ) -> PostprocessResult:
         """Transform transcript using preset or custom template.
 
@@ -45,6 +46,7 @@ class TextProcessor:
             preset: Prompt preset to use (ignored if custom_template is provided).
             smart_filename: If True, extract AI-suggested filename from response.
             custom_template: Optional custom prompt template. Takes priority over preset.
+            video_filename: Original filename without extension (for placeholders).
 
         Returns:
             PostprocessResult with generated text and optional suggested filename.
@@ -64,8 +66,18 @@ class TextProcessor:
             filename_marker = (
                 "\n\n**ВАЖНО:** В самом конце ответа добавь HTML-комментарий с предложенным именем файла:\n"
                 "```\n"
-                "<!-- FILENAME: [понятное название].md -->\n"
+                "<!-- FILENAME: [понятное название на русском языке].md -->\n"
                 "```\n"
+                "\n"
+                "Правила для названия файла:\n"
+                "- Используй русский язык\n"
+                "- Используй пробелы вместо подчеркиваний\n"
+                "- Название должно отражать суть встречи/видео\n"
+                "- Используй только буквы, цифры и пробелы\n"
+                "- Не используй спецсимволы: / \\ : * ? \" < > |\n"
+                "- Максимум 80 символов\n"
+                "Примеры: \"ФРДО интеграция подписи сертификата.md\", "
+                "\"Настройка громкости фоновой музыки.md\""
             )
             template = PromptTemplate(
                 system=template.system,
@@ -73,7 +85,7 @@ class TextProcessor:
             )
 
         # 3. Format with transcript data
-        user_prompt = self._format_prompt(template.user, transcript)
+        user_prompt = self._format_prompt(template.user, transcript, video_filename)
 
         # 4. Call LLM
         raw_output = self.client.complete(
@@ -111,6 +123,7 @@ class TextProcessor:
         self,
         template: str,
         transcript: TranscriptionResult,
+        video_filename: str | None = None,
     ) -> str:
         """Format template with transcript data.
 
@@ -122,11 +135,14 @@ class TextProcessor:
         - {duration_minutes} - duration in minutes
         - {duration_formatted} - HH:MM:SS formatted
         - {model} - model used for transcription
-        - {date} - current date
+        - {date} - current date (YYYY-MM-DD)
+        - {date_iso} - current date (YYYY-MM-DD) - alias for {date}
+        - {filename} - filename without extension
 
         Args:
             template: Prompt template with placeholders.
             transcript: Transcription result.
+            video_filename: Original filename without extension.
 
         Returns:
             Formatted prompt string.
@@ -150,6 +166,8 @@ class TextProcessor:
             "duration_formatted": duration_formatted,
             "model": transcript.model_used,
             "date": datetime.now().strftime("%Y-%m-%d"),
+            "date_iso": datetime.now().strftime("%Y-%m-%d"),
+            "filename": video_filename or "",
         }))
 
     def _format_duration(self, seconds: float | None) -> str:
