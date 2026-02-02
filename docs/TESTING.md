@@ -37,20 +37,21 @@ pytest --cov=src --cov-report=term-missing
 src/video_transcribe/
 ├── config.py
 ├── test_config.py          # Co-located tests
+├── conftest.py             # Shared fixtures for src/
 ├── audio/
 │   ├── converter.py
 │   ├── chunker.py
-│   └── test_chunker.py     # Future
+│   └── test_chunker.py     # ✅ Implemented (14 tests)
 ├── transcribe/
 │   ├── merger.py
-│   └── test_merger.py      # Future
+│   └── test_merger.py      # ✅ Implemented (10 tests)
 └── postprocess/
     ├── filename.py
-    └── test_filename.py    # Future
+    └── test_filename.py    # ✅ Implemented (28 tests)
 
 tests/
 ├── __init__.py             # Package marker
-└── conftest.py             # Shared fixtures
+└── conftest.py             # Shared fixtures for tests/
 ```
 
 **Co-location rationale:** Tests next to source code are easier to find during refactoring and keep implementation in context.
@@ -199,11 +200,41 @@ def test_validate_config_passes_with_valid_defaults(self, monkeypatch):
 | Module | Tests | Status |
 |--------|-------|--------|
 | config.py | 9 | ✅ Implemented |
-| audio/chunker.py | 5 | 🚧 Planned (TEST_PLAN.md §1) |
-| transcribe/merger.py | 5 | 🚧 Planned (TEST_PLAN.md §2) |
-| postprocess/filename.py | 6 | 🚧 Planned (TEST_PLAN.md §3) |
+| audio/chunker.py | 14 | ✅ Implemented |
+| transcribe/merger.py | 10 | ✅ Implemented |
+| postprocess/filename.py | 28 | ✅ Implemented |
 
-**Total:** 9 tests implemented, 16 planned
+**Total:** 61 tests implemented
+
+### Test Breakdown by Module
+
+**config.py** (9 tests)
+- `TestValidateConfig` — Configuration validation tests
+
+**audio/chunker.py** (14 tests)
+- `TestNoChunkingNeededSmallFile` — Small file handling (1 test)
+- `TestOverlapWithinLimit` — Overlap behavior (1 test)
+- `TestOverlapValidation` — Overlap validation errors (3 tests)
+- `TestChunkBoundariesCalculation` — Boundary calculations (3 tests)
+- `TestCleanupChunks` — Cleanup functionality (3 tests)
+- `TestSplitAudioIntegration` — Integration tests (3 tests)
+
+**transcribe/merger.py** (10 tests)
+- `TestSpeakerRenumberingTwoChunks` — Two chunks (1 test)
+- `TestSpeakerRenumberingManyChunks` — Many chunks (1 test)
+- `TestSpeakerRenumberingBeyondZ` — >26 speakers (1 test)
+- `TestTimestampAdjustment` — Timestamp offset handling (2 tests)
+- `TestMergeResultsValidation` — Input validation (2 tests)
+- `TestMergeResultsMetadata` — Metadata tests (3 tests)
+
+**postprocess/filename.py** (28 tests)
+- `TestExtractFilenameFromHtmlComment` — HTML comment parsing (5 tests)
+- `TestSanitizeWindowsInvalidChars` — Invalid character handling (4 tests)
+- `TestSanitizePathTraversal` — Path traversal prevention (2 tests)
+- `TestSanitizeReservedNames` — Windows reserved names (3 tests)
+- `TestResolveCollision` — Collision resolution (4 tests)
+- `TestGenerateSafeFilename` — Safe filename generation (6 tests)
+- `TestValidateFilename` — Filename validation (4 tests)
 
 ## Test Markers (Future)
 
