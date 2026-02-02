@@ -11,6 +11,8 @@
 | **LLM для summary** | GLM 4.7 (OpenAI-совместимая)                      |
 | **CLI**             | Click 8.1+                                         |
 | **Конфигурация**    | .env (без YAML пока)                              |
+| **Тесты**           | pytest 8.0+, pytest-mock 3.12+                    |
+| **Паттерн env vars**| importlib.reload + monkeypatch                    |
 
 ## Параметры пайплайна
 

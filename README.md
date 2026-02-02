@@ -180,6 +180,26 @@ EOF
 **AI-suggested filenames:**
 The LLM can suggest descriptive filenames (e.g., "Инструкция по удалению тикета.md" instead of "video.mp4.summary.md"). This is **enabled by default** — use `--no-smart-filename` to use standard naming.
 
+## Development
+
+### Running tests
+
+```bash
+# Install dev dependencies
+.venv/bin/pip install -e ".[dev]"
+
+# Run all tests
+.venv/bin/pytest -v
+
+# Run specific test file
+.venv/bin/pytest src/video_transcribe/test_config.py -v
+
+# Run specific test
+.venv/bin/pytest src/video_transcribe/test_config.py::TestValidateConfig::test_validate_chunk_overlap_negative_raises -v
+```
+
+See [docs/TESTING.md](docs/TESTING.md) for testing patterns and guidelines.
+
 ## Configuration
 
 Copy `.env.example` to `.env` and add your API keys:

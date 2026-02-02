@@ -20,6 +20,11 @@ python3 -m venv .venv
 .venv/bin/video-transcribe transcribe meeting.mp3 -m gpt-4o-transcribe-diarize -l ru
 .venv/bin/video-transcribe process meeting.mp4
 
+# Testing
+.venv/bin/pip install -e ".[dev]"
+.venv/bin/pytest -v
+.venv/bin/pytest src/video_transcribe/test_config.py -v
+
 # Entry point: src/video_transcribe/__main__.py:main
 ```
 
@@ -66,6 +71,26 @@ Merge → [Post-processing] → Markdown output
 
 **CLI Framework:** Click (chosen over Typer/rich-cli)
 
+**Testing:** pytest + pytest-mock, co-located tests
+
+## Testing
+
+**Framework:** pytest 8.0+ with pytest-mock 3.12+
+
+**Structure:** Co-located tests (`test_*.py` next to source files)
+
+**Key pattern:** For modules with env vars at import time (like `config.py`), use `importlib.reload()` after `monkeypatch.setenv()` to pick up new environment values.
+
+```python
+def test_config_validation(monkeypatch):
+    monkeypatch.setenv("CHUNK_MAX_SIZE_MB", "30")
+    import video_transcribe.config
+    config = importlib.reload(video_transcribe.config)
+    assert config.CHUNK_MAX_SIZE_MB == 30
+```
+
+**See:** `docs/TESTING.md` for complete testing guide.
+
 ## Configuration
 
 Environment variables (`.env`):
@@ -107,9 +132,10 @@ Environment variables (`.env`):
 - Pipeline orchestration (`pipeline.py`) — video → text → [postprocess]
 - CLI with `convert`, `transcribe`, and `process` commands
 - `.env` support via `python-dotenv`
+- Test infrastructure with pytest (config.py tests implemented)
 
 **Pending:**
-- Tests
+- Additional tests (chunker, merger, filename per TEST_PLAN.md)
 
 ## System Dependencies
 

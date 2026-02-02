@@ -23,6 +23,10 @@ dependencies = [
 video-transcribe = "video_transcribe.__main__:main"
 
 [project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-mock>=3.12",
+]
 nemo = [
     "nemo-toolkit[asr]>=1.23.0",
     "librosa>=0.10.0",
@@ -37,3 +41,16 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "src"]
+python_files = ["test_*.py"]
+markers = [
+    "unit: Fast unit tests",
+    "integration: Tests with external resources",
+]
+addopts = ["-v", "--strict-markers", "--tb=short"]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
